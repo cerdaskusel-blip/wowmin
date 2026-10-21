@@ -4,7 +4,8 @@ const origin = 'http://127.0.0.1:3000';
 async function guest(request: APIRequestContext) {
   const r = await request.post(
     'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=demo-key',
-    { data: { returnSecureToken: true } },
+    // Retry only a reset provisioning socket; workshop API requests are not retried.
+    { maxRetries: 2, data: { returnSecureToken: true } },
   );
   expect(r.ok()).toBeTruthy();
   return r.json();
