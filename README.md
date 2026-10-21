@@ -4,7 +4,7 @@ A live, mobile-first, 15-minute creativity workshop for approximately 50 teacher
 
 ## Local development (no deployment)
 
-Requirements: Node.js 22.12+ (validated with Node 24), npm, Java 21, and Chromium for browser tests. Firebase downloads its emulator binaries from `storage.googleapis.com`; that hostname must be allowed by the development environment. Package downloads use `registry.npmjs.org`. Emulator binaries retain the Firebase CLI’s checksum verification.
+Requirements: Node.js 24.12+, npm, Java 21, and Chromium for browser tests. Firebase downloads its emulator binaries from `storage.googleapis.com`; that hostname must be allowed by the development environment. Package downloads use `registry.npmjs.org`. Emulator binaries retain the Firebase CLI’s checksum verification.
 
 ```sh
 cd /workspace/wowmin
@@ -77,3 +77,5 @@ See `VALIDATION.md` for the checks actually executed in this workspace and any r
 ## Ephemeral session validation
 
 Run `npm run test:ephemeral` against the local app and emulators for two consecutive 60-participant sessions, cleanup verification, concurrency, injected outages and worker-crash recovery. See [EPHEMERAL-SESSIONS.md](EPHEMERAL-SESSIONS.md) for the lifecycle and operational limits, and [EPHEMERAL-VALIDATION.md](EPHEMERAL-VALIDATION.md) for the implementation results.
+
+Production container preparation and exact Windows PowerShell deployment commands: [DEPLOYMENT.md](DEPLOYMENT.md). No production resources are provisioned by these files.
