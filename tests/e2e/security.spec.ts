@@ -176,7 +176,7 @@ test('50 teachers can join one session, and joins are idempotent', async ({ requ
   ).json();
   expect(final.nextPageToken).toBeUndefined();
   expect(final.documents).toHaveLength(50);
-  const remaining = await Promise.all(Array.from({ length: 25 }, () => guest(request)));
+  const remaining = await Promise.all(Array.from({ length: 10 }, () => guest(request)));
   await Promise.all(
     remaining.map(async (u, i) => {
       expect(

@@ -62,7 +62,29 @@ try {
   );
   await assertFails(getDocs(collection(host, 'sessions/room/votes')));
   await assertFails(setDoc(doc(host, 'sessions/room'), { pausedRemainingMs: 60000 }));
-  console.log('Firestore and Storage rules: 23 authorization checks passed.');
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'sessions/room'), {
+      hostId: 'host',
+      expiresAt: Date.now() + 60000,
+      lifecycle: 'closing',
+    });
+    await setDoc(doc(ctx.firestore(), 'cleanupJobs/room'), { hostId: 'host' });
+  });
+  await assertFails(getDoc(doc(a, 'sessions/room')));
+  await assertFails(getDocs(collection(host, 'sessions/room/submissions')));
+  await assertFails(getDoc(doc(a, 'sessions/room/members/alice')));
+  await assertFails(getDoc(doc(host, 'cleanupJobs/room')));
+  await assertFails(setDoc(doc(host, 'cleanupJobs/room'), { state: 'complete' }));
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'sessions/room'), {
+      hostId: 'host',
+      expiresAt: 0,
+      lifecycle: 'active',
+    });
+  });
+  await assertFails(getDoc(doc(host, 'sessions/room')));
+  await assertFails(getDoc(doc(a, 'sessions/room/votes/alice')));
+  console.log('Firestore and Storage rules: 30 authorization checks passed.');
 } finally {
   await env.cleanup();
 }
