@@ -83,6 +83,12 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
   release();
   await host.unroute('**/api/action');
   await expect(alice.getByText('Let’s give it another try.')).toBeVisible();
+  await expect(
+    host
+      .locator('.moderation-card')
+      .filter({ hasText: 'Bob' })
+      .getByRole('button', { name: 'Approve', exact: true }),
+  ).toBeEnabled();
   await expect(host.getByRole('dialog')).not.toBeVisible();
   await alice
     .getByLabel('Finished sticker image')
