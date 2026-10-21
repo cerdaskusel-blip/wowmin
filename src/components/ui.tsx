@@ -43,14 +43,22 @@ export function Loading() {
     </div>
   );
 }
-export function Timer({ end, large = false }: { end: number; large?: boolean }) {
+export function Timer({
+  end,
+  large = false,
+  pausedRemainingMs,
+}: {
+  end: number;
+  large?: boolean;
+  pausedRemainingMs?: number | null;
+}) {
   const { offset } = useIdentity();
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(t);
   }, []);
-  const remaining = Math.max(0, Math.ceil((end - now - offset) / 1000));
+  const remaining = Math.max(0, Math.ceil((pausedRemainingMs ?? end - now - offset) / 1000));
   return (
     <span
       className={`timer ${large ? 'large' : ''} ${remaining < 30 ? 'urgent' : ''}`}
@@ -120,5 +128,30 @@ export function StickerArt({
         </>
       )}
     </div>
+  );
+}
+
+export function useNow() {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(timer);
+  }, []);
+  return now;
+}
+export function StickerImage({
+  sessionId,
+  sub,
+}: {
+  sessionId: string;
+  sub: import('@/lib/workshop').Submission;
+}) {
+  return (
+    <img
+      className="submission-image"
+      src={`/api/image?sessionId=${sessionId}&submissionId=${sub.id}&v=${sub.createdAt}`}
+      alt={`${sub.nickname}’s sticker${sub.caption ? `: ${sub.caption}` : ''}`}
+      loading="lazy"
+    />
   );
 }
