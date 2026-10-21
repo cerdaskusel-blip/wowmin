@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function signedIn() { return request.auth != null; }
+  function session(sid) { return get(/databases/$(database)/documents/sessions/$(sid)).data; }
+  function host(sid) { return signedIn() && request.auth.token.get('facilitator', false) == true && session(sid).hostId == request.auth.uid; }
+  function member(sid) { return signedIn() && (host(sid) || exists(/databases/$(database)/documents/sessions/$(sid)/members/$(request.auth.uid))); }
+  function active(sid) { return session(sid).expiresAt > request.time.toMillis(); }
+  match /sessions/{sid} {
+   allow read: if member(sid) && active(sid);
+   allow write: if false;
+   match /attendance/{uid} { allow read: if member(sid) && active(sid); allow write: if false; }
+   match /members/{uid} { allow read: if active(sid) && (host(sid) || (signedIn() && request.auth.uid == uid)); allow write: if false; }
+   match /submissions/{uid} { allow read: if member(sid) && active(sid) && (host(sid) || request.auth.uid == uid || resource.data.status == 'approved'); allow write: if false; }
+   match /votes/{uid} { allow read: if member(sid) && active(sid) && request.auth.uid == uid; allow write: if false; }
+  }
+  match /{document=**} { allow read, write: if false; }
+ }
+}

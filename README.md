@@ -1,0 +1,73 @@
+# WOW #1 — The Teacher Sticker Lab
+
+A live, mobile-first, 15-minute creativity workshop for approximately 50 teachers. Built with Next.js, React, TypeScript, Firebase Authentication, Firestore, and Firebase Storage. The app builds image prompts; teachers create images in their own external AI accounts. No image-generation API, selfie capture, or PowerPoint export is included.
+
+## Local development (no deployment)
+
+Requirements: Node.js 22.12+ (validated with Node 24), npm, Java 21, and Chromium for browser tests. Firebase downloads its emulator binaries from `storage.googleapis.com`; that hostname must be allowed by the development environment. Package downloads use `registry.npmjs.org`. Emulator binaries retain the Firebase CLI’s checksum verification.
+
+```sh
+cd /workspace/wowmin
+npm ci
+cp .env.example .env.local # only if .env.local does not already exist
+npm run emulators         # leave running in terminal 1
+npm run seed              # terminal 2, after emulators report ready
+npm run dev               # leave running in terminal 2
+```
+
+Open the app on port 3000 on the development machine. Choose **Facilitator studio → Enter local facilitator studio**, then create a session. The seeded account is `host@wow.local` with password `Workshop-local-2026`, strictly for the `demo-wow` local emulator. Open participant views in separate browser profiles or private contexts. Tabs in the same browser profile intentionally share one participant identity.
+
+Emulators bind to loopback, have no production credentials, and lose session data when stopped. Their download and CLI caches live under ignored `.firebase/`. The seeded account can be recreated safely. `npm run seed` never targets a live project. A local QR code only works on the machine serving the app: real participant phones require a reachable, approved hosting origin and real Firebase configuration. Do not expose emulator ports to a public network.
+
+## Workshop run of show
+
+| Stage       | Default time | Teacher experience                                                     | Facilitator action                  |
+| ----------- | ------------ | ---------------------------------------------------------------------- | ----------------------------------- |
+| Welcome     | 1 min        | Join by QR/code and nickname                                           | Welcome the room; open projector    |
+| Your prompt | 2 min        | Choose one of three caption collections, customize, select a style     | Start the prompt stage              |
+| Create      | 6 min        | Copy prompt, open ChatGPT/Gemini/Copilot, return with a finished image | Coach and approve incoming stickers |
+| Submit      | 3 min        | Upload or replace pending/returned sticker                             | Finish moderation                   |
+| Gallery     | 1 min        | View approved stickers                                                 | Review the showcase; open voting    |
+| Vote        | 2 min        | Cast one final vote for another creator                                | Close voting and reveal results     |
+| Celebrate   | Untimed      | See winners and tied ranks                                             | Celebrate everyone                  |
+
+The facilitator advances stages explicitly. Timers synchronize from a server deadline, and **+1 min** extends the current stage. At expiry, the server rejects uploads/votes until the facilitator extends or advances; stages do not advance unattended. Uploads are allowed during Create and Submit. Approved submissions cannot be replaced. Moderation locks when voting opens. No new votes are accepted once voting closes. Ties share a rank; zero-vote entries are not declared winners. If no votes are cast, the reveal celebrates the room without inventing a winner.
+
+Participant prompt drafts survive reloads and trips to external AI tools. Approved stickers, progress, stages, and results synchronize through Firestore listeners. The projector automatically rotates through approved stickers every six seconds. Motion respects the operating system’s reduced-motion preference. All fonts are bundled locally.
+
+## Authorization and data protection
+
+- Facilitators sign in through Firebase Authentication and require a trusted `facilitator: true` custom claim to create rooms. Room ownership is checked for host actions. Participants use anonymous Firebase accounts; membership is created through the server after code validation.
+- Browsers cannot write directly to Firestore or Storage. Firestore rules restrict reads to active room members, hide other participants’ pending/rejected stickers, and keep individual ballots private. The server uses Firebase Admin credentials and performs its own independent authorization.
+- Same-origin checks protect mutation routes. ID tokens are verified, including revocation. An HttpOnly, same-site cookie allows authorized image requests; it is refreshed with the Firebase ID token and cleared on sign-out. Every image request checks current membership and approval state. There are no public image download tokens.
+- Images are streamed with a request-size bound, capped at 5 MB / 20 megapixels, decoded as still PNG/JPEG/WebP, resized to at most 1200 × 1200, and re-encoded as WebP. Original bytes and metadata are not saved. Do not upload selfies or student photos: there is no selfie feature or automated face classifier, and the facilitator must reject inappropriate finished submissions.
+- Votes use a Firestore transaction: a member may cast exactly one immutable vote, only for an approved sticker by another member, during the active voting window. Reveal aggregation and vote submission both read the session, so concurrent closing cannot admit a late vote. Counts remain hidden until reveal.
+- Server limits include 75 members per room, 10 join attempts/minute/account, 5 uploads/minute/account, 90 actions/minute/account, and 6 new rooms/hour/facilitator. Session codes use six cryptographically random characters; sessions expire after 24 hours. Firebase anonymous-account throttling is an additional defense.
+- Anonymous participation is intentionally low friction. “One person” is enforced per Firebase identity/browser profile; it does not establish real-world identity or prevent someone using multiple devices. For a higher-stakes event, add organizer-issued invitations or verified sign-in and deployment-level rate limiting/App Check.
+
+## Validation
+
+Start the emulators, seed the facilitator, and run the app before integration tests.
+
+```sh
+npm run typecheck
+npm test
+npm run build
+npm run test:rules
+npm run test:e2e
+```
+
+Browser tests use `/usr/bin/chromium`; set `CHROMIUM_PATH` for another installation. They exercise separate facilitator/participant/projector contexts, prompt persistence, rejection and replacement, approval, live gallery, voting and tied winners, mobile layout, API access controls, direct Firebase rules, duplicate vote races, and 50 simultaneous joins (with repeat-join deduplication) and the 75-seat capacity limit. Browser tests create emulator-only rooms. Admission uses independent, transaction-protected seat reservations and a minimal attendance collection, avoiding a shared counter write when everyone scans the QR code together. Restart the emulators and seed again for repeated full-suite runs if the host’s creation rate limit is reached. The 50-participant check validates membership concurrency on local emulators, not a production network/load benchmark. Firebase’s Node Firestore transport is pinned via an npm override to patched `@grpc/grpc-js` 1.14.6; recheck that override when upgrading Firebase.
+
+## Connecting a real Firebase project later
+
+No project has been deployed or provisioned by this implementation. Deployment requires explicit approval.
+
+1. Create/select a Firebase project, enable Anonymous and Google authentication, create Firestore and Storage, and authorize the chosen app domain. Storage may require a billing-enabled Firebase plan; no paid image-generation service is used.
+2. Replace the public Firebase values in local/hosting configuration. Set `NEXT_PUBLIC_USE_EMULATORS=false`; remove **all** emulator host variables. Set `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`, and `NEXT_PUBLIC_APP_URL` to the chosen project/origin. Never store service-account keys in the repository. The server needs trusted Application Default Credentials with minimum necessary Firestore, Auth verification, and bucket access.
+3. A trusted administrator assigns an existing Firebase Auth UID with `FIREBASE_PROJECT_ID=... npm run grant:facilitator -- <uid>`. The user signs out and in to refresh the role. Do not expose this administrative script through a web route.
+4. After explicit deployment approval, publish the included Firestore and Storage rules with the approved Firebase deployment workflow, then host the Next.js server on a runtime that supports Firebase Admin and Sharp. Set a request body limit of at least 6 MB (some serverless hosts have lower fixed limits; select a compatible runtime). Configure HTTPS, authentication domains, quotas, budget alerts, and edge rate limiting.
+5. Configure a retention policy: expired sessions become inaccessible but are not automatically deleted. Use an approved scheduled Admin cleanup job to remove session subcollections, code mappings, rate-limit records, and stored images after the organizer’s retention window; Firestore TTL alone does not delete subcollections or Storage objects. This local implementation does not install cloud jobs or make billing changes.
+6. Verify a live workshop across real participant devices, including QR reachability, Google sign-in, uploads, moderation, voting, and projector synchronization before running the event.
+
+See `VALIDATION.md` for the checks actually executed in this workspace and any remaining environment limitations.
