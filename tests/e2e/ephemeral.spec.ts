@@ -84,6 +84,7 @@ test('failed cleanup is discoverable on facilitator home and retry stays closed 
     .locator('.pending-cleanups .panel')
     .filter({ has: host.locator(`a[href="/session/${id}"]`) });
   await expect(job.getByRole('heading', { name: 'Cleanup failed' })).toBeVisible();
+  expect((await new AxeBuilder({ page: host }).analyze()).violations).toEqual([]);
   await job.getByRole('link', { name: 'Review cleanup' }).click();
   await host.getByRole('button', { name: 'Retry cleanup' }).click();
   await expect(host.getByRole('button', { name: 'Retry cleanup' })).toBeEnabled();
