@@ -12,7 +12,14 @@ import {
   access,
   boundedText,
 } from '@/lib/server';
-import { nextStage, STAGE_INFO, rankVotes, Stage } from '@/lib/workshop';
+import {
+  nextStage,
+  STAGE_INFO,
+  rankVotes,
+  Stage,
+  remainingMs,
+  acceptingVotes,
+} from '@/lib/workshop';
 export const runtime = 'nodejs';
 const text = (max: number) =>
   z
@@ -30,6 +37,13 @@ const schema = z.discriminatedUnion('action', [
   }),
   z.object({ action: z.literal('advance'), sessionId: z.string() }),
   z.object({ action: z.literal('extend'), sessionId: z.string() }),
+  z.object({ action: z.literal('pause'), sessionId: z.string() }),
+  z.object({ action: z.literal('resume'), sessionId: z.string() }),
+  z.object({
+    action: z.literal('transition'),
+    sessionId: z.string(),
+    stage: z.enum(['lobby', 'prompt', 'generate', 'submit', 'gallery']),
+  }),
   z.object({
     action: z.literal('progress'),
     sessionId: z.string(),
@@ -110,11 +124,12 @@ export async function POST(req: NextRequest) {
             tx.get(seatRef),
           ]);
           const session = s.data();
-          if (!session || session.expiresAt < Date.now() || session.stage === 'results')
+          if (!session || session.expiresAt < Date.now())
             throw new ApiError(409, 'This workshop is closed.');
           if (session.hostId === user.uid)
             throw new ApiError(409, 'Use a different browser profile to join as a participant.');
           if (m.exists) return true;
+          if (session.stage === 'results') throw new ApiError(409, 'This workshop is closed.');
           if (reservation.exists) return false;
           tx.create(seatRef, { memberId: user.uid });
           tx.create(memberRef, {
@@ -134,13 +149,18 @@ export async function POST(req: NextRequest) {
     const { ref, host } = await access(data.sessionId, user.uid);
     if (host && user.facilitator !== true)
       throw new ApiError(403, 'Facilitator access is required.');
-    if (['advance', 'extend', 'moderate'].includes(data.action) && !host)
+    if (
+      ['advance', 'extend', 'pause', 'resume', 'transition', 'moderate'].includes(data.action) &&
+      !host
+    )
       throw new ApiError(403, 'Only the facilitator can do that.');
     await store.runTransaction(async (tx) => {
       const s = (await tx.get(ref)).data()!;
       if (s.expiresAt < Date.now()) throw new ApiError(410, 'This workshop has expired.');
-      if (data.action === 'advance') {
-        const next = nextStage(s.stage as Stage);
+      if (data.action === 'advance' || data.action === 'transition') {
+        if (data.action === 'transition' && ['vote', 'results'].includes(s.stage))
+          throw new ApiError(409, 'Stages cannot reopen after voting starts.');
+        const next = data.action === 'transition' ? data.stage : nextStage(s.stage as Stage);
         if (!next) throw new ApiError(409, 'The workshop is complete.');
         if (next === 'vote') {
           const approved = await tx.get(
@@ -165,12 +185,26 @@ export async function POST(req: NextRequest) {
         }
         tx.update(ref, {
           stage: next,
+          pausedRemainingMs: null,
           stageEndsAt: STAGE_INFO[next].seconds ? Date.now() + STAGE_INFO[next].seconds * 1000 : 0,
           ...results,
         });
+      } else if (data.action === 'pause') {
+        if (s.stage === 'results' || s.pausedRemainingMs != null)
+          throw new ApiError(409, 'This stage cannot be paused.');
+        tx.update(ref, { pausedRemainingMs: remainingMs(s as Parameters<typeof remainingMs>[0]) });
+      } else if (data.action === 'resume') {
+        if (s.pausedRemainingMs == null)
+          throw new ApiError(409, 'The workshop is already running.');
+        tx.update(ref, { stageEndsAt: Date.now() + s.pausedRemainingMs, pausedRemainingMs: null });
       } else if (data.action === 'extend') {
         if (s.stage === 'results') throw new ApiError(409, 'The workshop is complete.');
-        tx.update(ref, { stageEndsAt: Math.max(s.stageEndsAt, Date.now()) + 60_000 });
+        tx.update(
+          ref,
+          s.pausedRemainingMs != null
+            ? { pausedRemainingMs: s.pausedRemainingMs + 60_000 }
+            : { stageEndsAt: Math.max(s.stageEndsAt, Date.now()) + 60_000 },
+        );
       } else if (data.action === 'moderate') {
         if (['vote', 'results'].includes(s.stage))
           throw new ApiError(409, 'Moderation closes when voting opens.');
@@ -185,10 +219,13 @@ export async function POST(req: NextRequest) {
         });
       } else if (data.action === 'progress') {
         if (host) throw new ApiError(403, 'Join as a participant first.');
-        tx.update(ref.collection('members').doc(user.uid), { progress: data.progress });
+        const member = ref.collection('members').doc(user.uid);
+        const current = (await tx.get(member)).data();
+        if (!['submitted', 'voted'].includes(current?.progress))
+          tx.update(member, { progress: data.progress });
       } else if (data.action === 'vote') {
         if (host) throw new ApiError(403, 'Facilitators cannot vote.');
-        if (s.stage !== 'vote' || s.stageEndsAt <= Date.now())
+        if (!acceptingVotes(s as Parameters<typeof acceptingVotes>[0]))
           throw new ApiError(409, 'Voting is closed.');
         if (data.submissionId === user.uid)
           throw new ApiError(409, 'Choose another creator’s sticker.');
@@ -202,6 +239,7 @@ export async function POST(req: NextRequest) {
           throw new ApiError(409, 'This sticker is not available for voting.');
         tx.create(vote, { submissionId: data.submissionId, createdAt: Date.now() });
         tx.update(ref.collection('members').doc(user.uid), { progress: 'voted' });
+        tx.update(ref.collection('attendance').doc(user.uid), { voted: true });
       }
     });
     return NextResponse.json({ ok: true });

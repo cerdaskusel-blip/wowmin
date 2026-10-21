@@ -3,6 +3,7 @@ import sharp from 'sharp';
 import { randomUUID } from 'crypto';
 import { bucket, store } from '@/lib/admin';
 import { identity, requireOrigin, failure, access, limit, ApiError } from '@/lib/server';
+import { acceptingSubmissions, Workshop } from '@/lib/workshop';
 export const runtime = 'nodejs';
 export async function POST(req: NextRequest) {
   let savedPath: string | undefined;
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, 'Choose a PNG, JPEG, or WebP image under 5 MB.');
     const { ref, host, session } = await access(id, user.uid);
     if (host) throw new ApiError(403, 'Join as a participant to submit.');
-    if (!['generate', 'submit'].includes(session.stage) || session.stageEndsAt <= Date.now())
+    if (!acceptingSubmissions(session as Workshop))
       throw new ApiError(409, 'Submissions are closed.');
     const original = Buffer.from(await file.arrayBuffer());
     let optimized: Buffer;
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
         tx.get(ref.collection('submissions').doc(user.uid)),
       ]);
       const current = s.data()!;
-      if (!['generate', 'submit'].includes(current.stage) || current.stageEndsAt <= Date.now())
+      if (!acceptingSubmissions(current as Workshop))
         throw new ApiError(409, 'Submissions just closed.');
       if (old.data()?.status === 'approved')
         throw new ApiError(409, 'Your sticker is already approved.');
@@ -80,6 +81,7 @@ export async function POST(req: NextRequest) {
         createdAt: Date.now(),
       });
       tx.update(ref.collection('members').doc(user.uid), { progress: 'submitted' });
+      tx.update(ref.collection('attendance').doc(user.uid), { submitted: true });
     });
     if (previous)
       await bucket

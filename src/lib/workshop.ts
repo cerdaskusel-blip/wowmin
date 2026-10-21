@@ -21,7 +21,7 @@ export const STAGE_INFO: Record<Stage, { title: string; seconds: number; hint: s
   },
   generate: {
     title: 'Make a little magic',
-    seconds: 360,
+    seconds: 300,
     hint: 'Use your own AI account, then bring your finished sticker back.',
   },
   submit: {
@@ -41,7 +41,7 @@ export const STAGE_INFO: Record<Stage, { title: string; seconds: number; hint: s
   },
   results: {
     title: 'Meet your WOW makers',
-    seconds: 0,
+    seconds: 60,
     hint: 'Big ideas. Tiny stickers. A room full of creativity.',
   },
 };
@@ -120,6 +120,7 @@ export type Workshop = {
   code: string;
   stage: Stage;
   stageEndsAt: number;
+  pausedRemainingMs?: number | null;
   createdAt: number;
   expiresAt: number;
   participantCount: number;
@@ -156,4 +157,34 @@ export function rankVotes(
       return { ...s, rank };
     })
     .filter((s) => s.rank <= 3);
+}
+
+// Shared presentation/server semantics. A paused workshop accepts neither uploads nor votes.
+export function remainingMs(
+  session: Pick<Workshop, 'stageEndsAt' | 'pausedRemainingMs'>,
+  now = Date.now(),
+) {
+  return Math.max(0, session.pausedRemainingMs ?? session.stageEndsAt - now);
+}
+export function acceptingSubmissions(
+  session: Pick<Workshop, 'stage' | 'stageEndsAt' | 'pausedRemainingMs'>,
+  now = Date.now(),
+) {
+  return (
+    session.pausedRemainingMs == null &&
+    ['generate', 'submit'].includes(session.stage) &&
+    session.stageEndsAt > now
+  );
+}
+export function acceptingVotes(
+  session: Pick<Workshop, 'stage' | 'stageEndsAt' | 'pausedRemainingMs'>,
+  now = Date.now(),
+) {
+  return session.pausedRemainingMs == null && session.stage === 'vote' && session.stageEndsAt > now;
+}
+// Stable per-room order distributes early positions without moving cards on every update.
+export function wallOrder(id: string, sessionId: string) {
+  let hash = 2166136261;
+  for (const c of sessionId + id) hash = Math.imul(hash ^ c.charCodeAt(0), 16777619);
+  return hash >>> 0;
 }

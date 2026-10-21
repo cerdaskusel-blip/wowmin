@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makePrompt, rankVotes, nextStage, STAGES, STAGE_INFO } from '../src/lib/workshop';
+import {
+  makePrompt,
+  rankVotes,
+  nextStage,
+  STAGES,
+  STAGE_INFO,
+  remainingMs,
+  acceptingVotes,
+  acceptingSubmissions,
+} from '../src/lib/workshop';
 test('default timed workshop is exactly fifteen minutes', () => {
   assert.equal(
     STAGES.reduce((n, s) => n + STAGE_INFO[s].seconds, 0),
@@ -29,4 +38,19 @@ test('leaderboard preserves ties, excludes zero votes, and limits ranks', () => 
     ],
   );
   assert.deepEqual(rankVotes(subs, []), []);
+});
+
+test('paused clocks freeze and server windows close at expiry', () => {
+  const s = {
+    stage: 'generate' as const,
+    stageEndsAt: 10000,
+    pausedRemainingMs: null as number | null,
+  };
+  assert.equal(acceptingSubmissions(s, 9999), true);
+  assert.equal(acceptingSubmissions(s, 10000), false);
+  s.pausedRemainingMs = 5000;
+  assert.equal(remainingMs(s, 20000), 5000);
+  assert.equal(acceptingSubmissions(s, 5000), false);
+  assert.equal(acceptingVotes({ ...s, stage: 'vote' }, 5000), false);
+  assert.equal(acceptingVotes({ ...s, stage: 'vote', pausedRemainingMs: null }, 9999), true);
 });
