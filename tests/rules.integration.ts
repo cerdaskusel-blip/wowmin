@@ -57,7 +57,12 @@ try {
   await assertFails(getDocs(collection(outsider, 'sessions/room/attendance')));
   await assertFails(setDoc(doc(a, 'sessions/room/attendance/forged'), {}));
   await assertFails(getDoc(doc(a, 'sessions/room/seats/0')));
-  console.log('Firestore and Storage rules: 20 authorization checks passed.');
+  await assertFails(
+    setDoc(doc(a, 'sessions/room/attendance/alice'), { voted: true, submitted: true }),
+  );
+  await assertFails(getDocs(collection(host, 'sessions/room/votes')));
+  await assertFails(setDoc(doc(host, 'sessions/room'), { pausedRemainingMs: 60000 }));
+  console.log('Firestore and Storage rules: 23 authorization checks passed.');
 } finally {
   await env.cleanup();
 }

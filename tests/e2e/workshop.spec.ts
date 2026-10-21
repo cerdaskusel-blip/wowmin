@@ -1,5 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import sharp from 'sharp';
+import AxeBuilder from '@axe-core/playwright';
 async function join(page: Page, code: string, name: string) {
   await page.goto('/');
   await page.getByLabel('Session code').fill(code);
@@ -64,6 +65,8 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
     .filter({ hasText: 'Alice' })
     .getByRole('button', { name: 'Return' })
     .click();
+  await host.getByRole('button', { name: 'Return and next' }).click();
+  await host.getByRole('button', { name: 'Back to review desk' }).click();
   await expect(alice.getByText('Let’s give it another try.')).toBeVisible();
   await alice
     .getByLabel('Finished sticker image')
@@ -77,11 +80,13 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
   }
   await expect(alice.getByText('You’re in the showcase!')).toBeVisible();
   await expect(host.locator('.gallery-card')).toHaveCount(2);
-  await expect(projector.locator('.projected-sticker img')).toBeVisible();
+  await expect(projector.locator('.wall-image-button img').first()).toBeVisible();
   await host.getByRole('button', { name: 'Next: Send your sticker' }).click();
   await host.getByRole('button', { name: 'Next: The sticker showcase' }).click();
+  await host.getByRole('button', { name: 'Confirm stage change' }).click();
   await expect(alice.locator('.gallery-card')).toHaveCount(2);
   await host.getByRole('button', { name: 'Open voting', exact: true }).click();
+  await host.getByRole('button', { name: 'Confirm stage change' }).click();
   await alice
     .locator('.gallery-card')
     .filter({ hasText: 'Bob' })
@@ -90,7 +95,10 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
   await alice.getByRole('button', { name: 'Cast my vote' }).click();
   await expect(alice.getByText('Your vote is counted')).toBeVisible();
   await expect(
-    alice.locator('.gallery-card').filter({ hasText: 'Alice' }).getByRole('button'),
+    alice
+      .locator('.gallery-card')
+      .filter({ hasText: 'Alice' })
+      .getByRole('button', { name: 'Your creation' }),
   ).toBeDisabled();
   await bob
     .locator('.gallery-card')
@@ -100,6 +108,7 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
   await bob.getByRole('button', { name: 'Cast my vote' }).click();
   await expect(bob.getByText('Your vote is counted')).toBeVisible();
   await host.getByRole('button', { name: 'Close voting & reveal' }).click();
+  await host.getByRole('button', { name: 'Confirm stage change' }).click();
   await expect(alice.getByText('Huge applause.')).toBeVisible();
   await expect(projector.locator('.winner')).toHaveCount(2);
   await expect
@@ -123,12 +132,26 @@ test('landing fits a mobile viewport', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations,
+  ).toEqual([]);
   await page.screenshot({ path: 'test-results/home-mobile.png', fullPage: true });
   await page.setViewportSize({ width: 320, height: 720 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
   await page.setViewportSize({ width: 1440, height: 1100 });
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations,
+  ).toEqual([]);
   await page.screenshot({ path: 'test-results/home-desktop.png', fullPage: true });
 });
 

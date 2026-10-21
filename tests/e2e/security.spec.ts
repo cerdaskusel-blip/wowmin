@@ -62,6 +62,15 @@ test('authorization, protected uploads, moderation locks and atomic voting', asy
       ).ok(),
     ).toBeTruthy();
   expect((await act(request, a.idToken, 'advance', { sessionId })).status()).toBe(403);
+  for (const action of ['pause', 'resume', 'extend', 'transition'])
+    expect(
+      (
+        await act(request, a.idToken, action, {
+          sessionId,
+          ...(action === 'transition' ? { stage: 'submit' } : {}),
+        })
+      ).status(),
+    ).toBe(403);
   expect(
     (await act(request, outsider.idToken, 'vote', { sessionId, submissionId: a.localId })).status(),
   ).toBe(403);
@@ -85,6 +94,9 @@ test('authorization, protected uploads, moderation locks and atomic voting', asy
   expect((await upload(a.idToken, image)).status()).toBe(409);
   for (let i = 0; i < 2; i++)
     expect((await act(request, h, 'advance', { sessionId })).ok()).toBeTruthy();
+  expect((await act(request, h, 'pause', { sessionId })).ok()).toBeTruthy();
+  expect((await upload(a.idToken, image)).status()).toBe(409);
+  expect((await act(request, h, 'resume', { sessionId })).ok()).toBeTruthy();
   expect((await upload(a.idToken, Buffer.from('<svg></svg>'), 'image/svg+xml')).status()).toBe(400);
   expect((await upload(a.idToken, image)).ok()).toBeTruthy();
   const imageUrl = `/api/image?sessionId=${sessionId}&submissionId=${a.localId}`;
@@ -118,6 +130,7 @@ test('authorization, protected uploads, moderation locks and atomic voting', asy
       await act(request, h, 'moderate', { sessionId, submissionId: a.localId, status: 'rejected' })
     ).status(),
   ).toBe(409);
+  expect((await act(request, h, 'transition', { sessionId, stage: 'submit' })).status()).toBe(409);
   const votes = await Promise.all([
     act(request, b.idToken, 'vote', { sessionId, submissionId: a.localId }),
     act(request, b.idToken, 'vote', { sessionId, submissionId: a.localId }),
