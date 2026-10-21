@@ -14,7 +14,8 @@
     "grant:facilitator": "tsx scripts/grant-facilitator.ts",
     "test:rules": "tsx tests/rules.integration.ts",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "cleanup": "node --env-file=.env.local --import tsx scripts/cleanup-worker.ts"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.3.0",

@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { randomUUID } from 'crypto';
+import { assertActive } from '@/lib/lifecycle';
 import { bucket, store } from '@/lib/admin';
 import { identity, requireOrigin, failure, access, limit, ApiError } from '@/lib/server';
 import { acceptingSubmissions, Workshop } from '@/lib/workshop';
 export const runtime = 'nodejs';
 export async function POST(req: NextRequest) {
   let savedPath: string | undefined;
+  let operation: FirebaseFirestore.DocumentReference | undefined;
+  let storageSettled = false;
   try {
     requireOrigin(req);
     const user = await identity(req);
-    await limit(`upload:${user.uid}`, 5);
+    await limit(`upload:${user.uid}`, 5, 60_000, user.uid);
     const reader = req.body?.getReader();
     if (!reader) throw new ApiError(400, 'Choose a sticker image.');
     const chunks: Uint8Array[] = [];
@@ -54,11 +57,21 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, 'Use a valid, still PNG, JPEG, or WebP image (up to 20 megapixels).');
     }
     savedPath = `sessions/${id}/${user.uid}/${randomUUID()}.webp`;
+    operation = ref.collection('uploads').doc(randomUUID());
+    const op = operation;
+    await store.runTransaction(async (tx) => {
+      const current = (await tx.get(ref)).data();
+      assertActive(current);
+      if (!acceptingSubmissions(current as Workshop))
+        throw new ApiError(409, 'Submissions are closed.');
+      tx.create(op, { path: savedPath, startedAt: Date.now() });
+    });
     await bucket.file(savedPath).save(optimized, {
       resumable: false,
       contentType: 'image/webp',
       metadata: { cacheControl: 'private, no-store' },
     });
+    storageSettled = true;
     let previous: string | undefined;
     await store.runTransaction(async (tx) => {
       const [s, m, old] = await Promise.all([
@@ -67,6 +80,7 @@ export async function POST(req: NextRequest) {
         tx.get(ref.collection('submissions').doc(user.uid)),
       ]);
       const current = s.data()!;
+      assertActive(current);
       if (!acceptingSubmissions(current as Workshop))
         throw new ApiError(409, 'Submissions just closed.');
       if (old.data()?.status === 'approved')
@@ -96,5 +110,8 @@ export async function POST(req: NextRequest) {
         .delete({ ignoreNotFound: true })
         .catch(() => {});
     return failure(e);
+  } finally {
+    // Only release after every Storage promise has settled. Never expire this by time alone.
+    if (operation && storageSettled) await operation.delete().catch(() => {});
   }
 }
