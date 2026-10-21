@@ -24,13 +24,13 @@ async function cleanup(id: string, action: string, confirmed = false) {
       sessionId: id,
       action,
       confirmed: confirmed || undefined,
-      ticket: localStorage.getItem(key) || undefined,
+      ticket: sessionStorage.getItem(key) || undefined,
     }),
   });
   const result = await response.json();
   if (!response.ok)
     throw new Error(result.error || 'Could not check deletion. Retry when connected.');
-  if (result.ticket) localStorage.setItem(key, result.ticket);
+  if (result.ticket) sessionStorage.setItem(key, result.ticket);
   return result as { state: string; error?: string };
 }
 export function EndSession({ id, title }: { id: string; title: string }) {
@@ -120,7 +120,7 @@ export function CleanupStatus({ id }: { id: string }) {
       stopped = true;
       clearTimeout(timer);
       if (sessionStorage.getItem(`wow-cleanup-complete-${id}`)) {
-        localStorage.removeItem(`wow-cleanup-${id}`);
+        sessionStorage.removeItem(`wow-cleanup-${id}`);
         sessionStorage.removeItem(`wow-cleanup-complete-${id}`);
       }
     };
