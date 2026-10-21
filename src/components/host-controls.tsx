@@ -198,7 +198,7 @@ export function ReviewDesk({
     const index = visible.findIndex((s) => s.id === sub.id);
     const following = visible[index + 1] || visible[index - 1];
     if (await act('moderate', { submissionId: sub.id, status, reason }))
-      setSelected(selected ? following?.id || null : null);
+      setSelected((currentId) => (currentId === sub.id ? following?.id || null : currentId));
   }
   return (
     <section className="review-desk">

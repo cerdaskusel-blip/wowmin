@@ -65,9 +65,25 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
     .filter({ hasText: 'Alice' })
     .getByRole('button', { name: 'Return' })
     .click();
+  // Keep the decision in flight while the facilitator dismisses the dialog.
+  let release!: () => void, arrived!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  const hit = new Promise<void>((resolve) => (arrived = resolve));
+  await host.route('**/api/action', async (route) => {
+    const data = route.request().postDataJSON();
+    if (data.action === 'moderate' && data.status === 'rejected') {
+      arrived();
+      await gate;
+    }
+    await route.continue();
+  });
   await host.getByRole('button', { name: 'Return and next' }).click();
+  await hit;
   await host.getByRole('button', { name: 'Back to review desk' }).click();
+  release();
+  await host.unroute('**/api/action');
   await expect(alice.getByText('Let’s give it another try.')).toBeVisible();
+  await expect(host.getByRole('dialog')).not.toBeVisible();
   await alice
     .getByLabel('Finished sticker image')
     .setInputFiles({ name: 'sticker.png', mimeType: 'image/png', buffer: image });
