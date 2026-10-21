@@ -24,6 +24,7 @@ function act(
   data: Record<string, unknown> = {},
 ) {
   return request.post('/api/action', {
+    timeout: 30000,
     headers: { Authorization: `Bearer ${token}`, Origin: origin },
     data: { action, ...data },
   });

@@ -51,6 +51,7 @@ async function act(
   data: Record<string, unknown> = {},
 ) {
   return r.post('/api/action', {
+    timeout: 30000,
     headers: { Origin: origin, Authorization: `Bearer ${token}` },
     data: { action, ...data },
   });
@@ -230,6 +231,7 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
     await expect(p.getByText('YOU’RE IN. LET’S GET CREATIVE.')).toBeVisible();
   }
   const crowd = await Promise.all(Array.from({ length: 48 }, () => guest(request)));
+  const joinsStarted = Date.now();
   await Promise.all(
     crowd.map(async (u, i) =>
       expect(
@@ -242,6 +244,8 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
       ).toBeTruthy(),
     ),
   );
+  const concurrentJoinMs = Date.now() - joinsStarted;
+  expect(concurrentJoinMs).toBeLessThan(60000);
   await expect(host.locator('.member-row')).toHaveCount(50);
   const projector = await host.context().newPage();
   await projector.setViewportSize({ width: 1920, height: 1080 });
@@ -475,6 +479,7 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
     JSON.stringify(
       {
         participants: 50,
+        concurrentJoinMs,
         submissions: subs.length,
         votes: final.totalVotes,
         winners: final.winners.map((w: { rank: number; votes: number }) => ({
