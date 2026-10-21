@@ -10,6 +10,7 @@ import {
 import { ArrowRight, ShieldCheck, Presentation, Users, Timer } from 'lucide-react';
 import { Header, ErrorMessage, Loading } from '@/components/ui';
 import { useIdentity } from '@/components/provider';
+import { PendingCleanups } from '@/components/cleanup';
 import { auth, api, isLocal } from '@/lib/firebase';
 export default function Facilitator() {
   const { user, ready, facilitator, error: authError } = useIdentity();
@@ -146,6 +147,11 @@ export default function Facilitator() {
           <ErrorMessage message={error || authError} />
         </section>
       </main>
+      {facilitator && (
+        <div className="studio">
+          <PendingCleanups />
+        </div>
+      )}
     </>
   );
 }

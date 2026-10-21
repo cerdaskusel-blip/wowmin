@@ -171,3 +171,55 @@ export function CleanupStatus({ id }: { id: string }) {
     </main>
   );
 }
+
+export function PendingCleanups() {
+  const [jobs, setJobs] = useState<{ id: string; state: string; error: string }[]>([]);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      try {
+        const response = await fetch('/api/cleanup', {
+          headers: { Authorization: `Bearer ${await auth.currentUser?.getIdToken()}` },
+          cache: 'no-store',
+        });
+        if (!response.ok)
+          throw new Error('Could not check unfinished cleanup. Refresh when connected.');
+        const result = await response.json();
+        if (!stopped) {
+          setJobs(result.jobs);
+          setError('');
+        }
+      } catch (e) {
+        if (!stopped) setError((e as Error).message);
+      }
+      if (!stopped) timer = setTimeout(poll, 10000);
+    }
+    void poll();
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, []);
+  return (
+    <section className="pending-cleanups" aria-label="Unfinished workshop cleanup">
+      <ErrorMessage message={error} />
+      {jobs.length > 0 && (
+        <>
+          <h2>Unfinished cleanup</h2>
+          <p>These workshops are closed. Their deletion has not yet been verified.</p>
+        </>
+      )}
+      {jobs.map((job) => (
+        <div key={job.id} className="panel">
+          <h3>{job.state === 'failed' ? 'Cleanup failed' : 'Cleanup in progress'}</h3>
+          {job.error && <p>{job.error}</p>}
+          <Link className="button secondary" href={`/session/${job.id}`}>
+            Review cleanup
+          </Link>
+        </div>
+      ))}
+    </section>
+  );
+}

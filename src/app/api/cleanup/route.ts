@@ -59,3 +59,28 @@ export async function POST(req: NextRequest) {
     return failure(e);
   }
 }
+
+// Only unfinished jobs are listed; completed workshops leave no history record.
+export async function GET(req: NextRequest) {
+  try {
+    const user = await identity(req);
+    if (user.facilitator !== true) throw new ApiError(403, 'Facilitator access is required.');
+    const jobs = await store
+      .collection('cleanupJobs')
+      .where('hostId', '==', user.uid)
+      .select('state', 'error')
+      .get();
+    return NextResponse.json(
+      {
+        jobs: jobs.docs.map((job) => ({
+          id: job.id,
+          state: job.data().state,
+          error: job.data().error || '',
+        })),
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  } catch (e) {
+    return failure(e);
+  }
+}
