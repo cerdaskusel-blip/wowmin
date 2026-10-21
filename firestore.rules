@@ -5,7 +5,7 @@ service cloud.firestore {
   function session(sid) { return get(/databases/$(database)/documents/sessions/$(sid)).data; }
   function host(sid) { return signedIn() && request.auth.token.get('facilitator', false) == true && session(sid).hostId == request.auth.uid; }
   function member(sid) { return signedIn() && (host(sid) || exists(/databases/$(database)/documents/sessions/$(sid)/members/$(request.auth.uid))); }
-  function active(sid) { return session(sid).expiresAt > request.time.toMillis(); }
+  function active(sid) { return session(sid).expiresAt > request.time.toMillis() && session(sid).get('lifecycle', 'active') == 'active'; }
   match /sessions/{sid} {
    allow read: if member(sid) && active(sid);
    allow write: if false;

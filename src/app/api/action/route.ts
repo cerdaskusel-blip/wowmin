@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { randomInt } from 'crypto';
-import { store } from '@/lib/admin';
+import { store, adminAuth } from '@/lib/admin';
+import { MAX_PARTICIPANTS, retentionMs, assertActive } from '@/lib/lifecycle';
 import {
   identity,
   requireOrigin,
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
   try {
     requireOrigin(req);
     const user = await identity(req);
-    await limit(`action:${user.uid}`, 90);
+    await limit(`action:${user.uid}`, 90, 60_000, user.uid);
     const body = await boundedText(req, 4096);
     let parsed: unknown;
     try {
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
     const now = Date.now();
     if (data.action === 'create') {
       if (user.facilitator !== true) throw new ApiError(403, 'Facilitator access is required.');
-      await limit(`create:${user.uid}`, 6, 3600_000);
+      const expiresAt = now + retentionMs();
       const ref = store.collection('sessions').doc();
       const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       const code = Array.from({ length: 6 }, () => alphabet[randomInt(alphabet.length)]).join('');
@@ -86,29 +87,30 @@ export async function POST(req: NextRequest) {
         const codeRef = store.doc(`codes/${code}`);
         if ((await tx.get(codeRef)).exists)
           throw new ApiError(409, 'Please try creating the workshop again.');
-        tx.create(codeRef, { sessionId: ref.id, expiresAt: now + 86400_000 });
+        tx.create(codeRef, { sessionId: ref.id, expiresAt: expiresAt });
         tx.create(ref, {
           id: ref.id,
           title: data.title,
           code,
           hostId: user.uid,
           stage: 'lobby',
+          lifecycle: 'active',
           stageEndsAt: now + 60_000,
           createdAt: now,
-          expiresAt: now + 86400_000,
+          expiresAt: expiresAt,
         });
       });
       return NextResponse.json({ sessionId: ref.id });
     }
     if (data.action === 'join') {
-      await limit(`join:${user.uid}`, 10);
+      await limit(`join:${user.uid}`, 10, 60_000, user.uid);
       const code = await store.doc(`codes/${data.code}`).get();
       const record = code.data();
       if (!record || record.expiresAt < now)
         throw new ApiError(404, 'That code is not active. Check it with your facilitator.');
       const ref = sessionRef(record.sessionId);
       // Independent seat documents avoid a shared write lock when the entire room joins.
-      const seats = Array.from({ length: 75 }, (_, i) => i);
+      const seats = Array.from({ length: MAX_PARTICIPANTS }, (_, i) => i);
       for (let i = seats.length - 1; i > 0; i--) {
         const j = randomInt(i + 1);
         [seats[i], seats[j]] = [seats[j], seats[i]];
@@ -118,19 +120,33 @@ export async function POST(req: NextRequest) {
         admitted = await store.runTransaction(async (tx) => {
           const memberRef = ref.collection('members').doc(user.uid);
           const seatRef = ref.collection('seats').doc(String(seat));
-          const [s, m, reservation] = await Promise.all([
+          const identityRef = store.doc(`identities/${user.uid}`);
+          const [s, m, reservation, identityState] = await Promise.all([
             tx.get(ref),
             tx.get(memberRef),
             tx.get(seatRef),
+            tx.get(identityRef),
           ]);
           const session = s.data();
-          if (!session || session.expiresAt < Date.now())
-            throw new ApiError(409, 'This workshop is closed.');
-          if (session.hostId === user.uid)
+          assertActive(session);
+          if (identityState.data()?.deleting)
+            throw new ApiError(410, 'Your previous workshop has ended. Please sign in again.');
+          if (session!.hostId === user.uid)
             throw new ApiError(409, 'Use a different browser profile to join as a participant.');
+          // Recheck Auth under the identity document lock: a request authenticated
+          // before cleanup must not resurrect an already-deleted account.
+          try {
+            await adminAuth.getUser(user.uid);
+          } catch {
+            throw new ApiError(401, 'Please sign in again.');
+          }
           if (m.exists) return true;
-          if (session.stage === 'results') throw new ApiError(409, 'This workshop is closed.');
+          if (session!.stage === 'results') throw new ApiError(409, 'This workshop is closed.');
           if (reservation.exists) return false;
+          tx.set(identityRef, {
+            sessions: { ...identityState.data()?.sessions, [ref.id]: true },
+            anonymous: user.firebase.sign_in_provider === 'anonymous',
+          });
           tx.create(seatRef, { memberId: user.uid });
           tx.create(memberRef, {
             id: user.uid,
@@ -156,7 +172,7 @@ export async function POST(req: NextRequest) {
       throw new ApiError(403, 'Only the facilitator can do that.');
     await store.runTransaction(async (tx) => {
       const s = (await tx.get(ref)).data()!;
-      if (s.expiresAt < Date.now()) throw new ApiError(410, 'This workshop has expired.');
+      assertActive(s);
       if (data.action === 'advance' || data.action === 'transition') {
         if (data.action === 'transition' && ['vote', 'results'].includes(s.stage))
           throw new ApiError(409, 'Stages cannot reopen after voting starts.');

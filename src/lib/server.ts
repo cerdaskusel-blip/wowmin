@@ -34,24 +34,38 @@ export function failure(error: unknown) {
     return NextResponse.json({ error: 'Check the details and try again.' }, { status: 400 });
   console.error(
     'Workshop request failed',
-    error instanceof Error ? error.message : 'Unknown error',
+    'Unexpected backend error (details suppressed to protect workshop data)',
   );
   return NextResponse.json(
     { error: 'The workshop service is unavailable. Please try again.' },
     { status: 500 },
   );
 }
-export async function limit(key: string, max: number, windowMs = 60_000) {
+export async function limit(key: string, max: number, windowMs = 60_000, uid?: string) {
   const id = createHash('sha256').update(key).digest('hex');
   const ref = store.doc(`limits/${id}`);
   const now = Date.now();
   await store.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     const old = snap.data();
+    if (uid) {
+      const identity = await tx.get(store.doc(`identities/${uid}`));
+      try {
+        await adminAuth.getUser(uid);
+      } catch {
+        throw new ApiError(401, 'Please sign in again.');
+      }
+      if (identity.data()?.deleting)
+        throw new ApiError(410, 'Your previous workshop has ended. Please rejoin.');
+    }
     const active = old && old.resetAt > now;
     const count = active ? old.count : 0;
     if (count >= max) throw new ApiError(429, 'A little too fast! Wait a minute and try again.');
-    tx.set(ref, { count: count + 1, resetAt: active ? old.resetAt : now + windowMs });
+    tx.set(ref, {
+      count: count + 1,
+      resetAt: active ? old.resetAt : now + windowMs,
+      ...(uid ? { uid } : {}),
+    });
   });
 }
 export function sessionRef(id: string) {
@@ -62,7 +76,7 @@ export async function access(id: string, uid: string) {
   const ref = sessionRef(id);
   const snap = await ref.get();
   const session = snap.data();
-  if (!session || session.expiresAt < Date.now())
+  if (!session || session.lifecycle === 'closing' || session.expiresAt <= Date.now())
     throw new ApiError(404, 'This workshop has ended or does not exist.');
   const host = session.hostId === uid;
   if (!host && !(await ref.collection('members').doc(uid).get()).exists)
