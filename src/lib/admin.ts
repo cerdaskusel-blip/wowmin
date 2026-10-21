@@ -19,3 +19,7 @@ const app =
 export const adminAuth = getAuth(app);
 export const store = getFirestore(app);
 export const bucket = getStorage(app).bucket();
+
+// A tracked upload issues exactly one non-resumable write. Unknown outcomes
+// stay in the operation ledger; background retries must not recreate deleted objects.
+bucket.storage.retryOptions.autoRetry = false;

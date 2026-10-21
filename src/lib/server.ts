@@ -41,13 +41,24 @@ export function failure(error: unknown) {
     { status: 500 },
   );
 }
-export async function limit(key: string, max: number, windowMs = 60_000, uid?: string) {
+export async function limit(
+  key: string,
+  max: number,
+  windowMs = 60_000,
+  uid?: string,
+  sessionId?: string,
+) {
   const id = createHash('sha256').update(key).digest('hex');
   const ref = store.doc(`limits/${id}`);
   const now = Date.now();
   await store.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     const old = snap.data();
+    if (sessionId) {
+      const session = (await tx.get(sessionRef(sessionId))).data();
+      if (!session || session.lifecycle === 'closing' || session.expiresAt <= Date.now())
+        throw new ApiError(410, 'This workshop has ended.');
+    }
     if (uid) {
       const identity = await tx.get(store.doc(`identities/${uid}`));
       try {
@@ -65,6 +76,7 @@ export async function limit(key: string, max: number, windowMs = 60_000, uid?: s
       count: count + 1,
       resetAt: active ? old.resetAt : now + windowMs,
       ...(uid ? { uid } : {}),
+      ...(sessionId ? { sessionId } : {}),
     });
   });
 }

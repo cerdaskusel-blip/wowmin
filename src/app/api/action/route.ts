@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   try {
     requireOrigin(req);
     const user = await identity(req);
-    await limit(`action:${user.uid}`, 90, 60_000, user.uid);
+
     const body = await boundedText(req, 4096);
     let parsed: unknown;
     try {
@@ -76,6 +76,8 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, 'Invalid request format.');
     }
     const data = schema.parse(parsed);
+    const sid = 'sessionId' in data ? data.sessionId : undefined;
+    await limit(`action:${user.uid}:${sid || 'entry'}`, 90, 60_000, user.uid, sid);
     const now = Date.now();
     if (data.action === 'create') {
       if (user.facilitator !== true) throw new ApiError(403, 'Facilitator access is required.');
@@ -103,6 +105,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ sessionId: ref.id });
     }
     if (data.action === 'join') {
+      if (user.firebase.sign_in_provider !== 'anonymous')
+        throw new ApiError(403, 'Use a separate participant browser to join anonymously.');
       await limit(`join:${user.uid}`, 10, 60_000, user.uid);
       const code = await store.doc(`codes/${data.code}`).get();
       const record = code.data();

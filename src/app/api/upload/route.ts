@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   try {
     requireOrigin(req);
     const user = await identity(req);
-    await limit(`upload:${user.uid}`, 5, 60_000, user.uid);
+
     const reader = req.body?.getReader();
     if (!reader) throw new ApiError(400, 'Choose a sticker image.');
     const chunks: Uint8Array[] = [];
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
     if (!(file instanceof File) || file.size > 5 * 1024 * 1024 || !file.size)
       throw new ApiError(400, 'Choose a PNG, JPEG, or WebP image under 5 MB.');
     const { ref, host, session } = await access(id, user.uid);
+    await limit(`upload:${id}:${user.uid}`, 5, 60_000, user.uid, id);
     if (host) throw new ApiError(403, 'Join as a participant to submit.');
     if (!acceptingSubmissions(session as Workshop))
       throw new ApiError(409, 'Submissions are closed.');
@@ -68,6 +69,8 @@ export async function POST(req: NextRequest) {
     });
     await bucket.file(savedPath).save(optimized, {
       resumable: false,
+      timeout: 30_000,
+      preconditionOpts: { ifGenerationMatch: 0 },
       contentType: 'image/webp',
       metadata: { cacheControl: 'private, no-store' },
     });

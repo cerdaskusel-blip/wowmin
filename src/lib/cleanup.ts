@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
 import { adminAuth, store, bucket } from './admin';
 import { ApiError, sessionRef } from './server';
+import { retentionMs } from './lifecycle';
 
 function secret() {
   const value = process.env.CLEANUP_TICKET_SECRET;
@@ -90,14 +91,22 @@ async function removeIdentity(uid: string, sid: string, lease: string) {
 }
 export async function verifyDeleted(id: string) {
   const ref = sessionRef(id);
-  const [session, collections, codes, identities, files] = await Promise.all([
+  const [session, collections, codes, identities, files, limits] = await Promise.all([
     ref.get(),
     ref.listCollections(),
     store.collection('codes').where('sessionId', '==', id).get(),
     store.collection('identities').where(`sessions.${id}`, '==', true).get(),
     bucket.getFiles({ prefix: `sessions/${id}/` }),
+    store.collection('limits').where('sessionId', '==', id).get(),
   ]);
-  if (session.exists || collections.length || !codes.empty || !identities.empty || files[0].length)
+  if (
+    session.exists ||
+    collections.length ||
+    !codes.empty ||
+    !identities.empty ||
+    files[0].length ||
+    !limits.empty
+  )
     throw new Error('Deletion verification failed');
 }
 // Hooks are dependency injection for emulator failure tests, never request-controlled.
@@ -130,12 +139,29 @@ export async function cleanSession(id: string, hooks: CleanupHooks = {}) {
     });
   }
   try {
+    if (!process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+      if (process.env.WORKSHOP_PRIVACY_REVIEWED !== 'true')
+        throw new Error('Production privacy review required');
+      const [metadata] = await bucket.getMetadata();
+      if (
+        metadata.versioning?.enabled ||
+        metadata.retentionPolicy ||
+        Number(metadata.softDeletePolicy?.retentionDurationSeconds ?? 0) > 0
+      )
+        throw new Error('Bucket retains deleted data');
+    }
     // Never infer a finished upload from elapsed time. Unknown writers block completion.
     const uploads = await ref.collection('uploads').get();
-    if (!uploads.empty)
-      throw new Error(
-        'Uploads are still settling. Retry cleanup. If this persists, an administrator must reconcile the upload service.',
-      );
+    for (const upload of uploads.docs) {
+      // A complete object proves the sole non-resumable Storage write landed.
+      // No SDK retries or second writes can run for this unique object path.
+      const [exists] = await bucket.file(upload.data().path).exists();
+      if (exists) await upload.ref.delete();
+      else
+        throw new Error(
+          'Uploads are still settling. Retry cleanup. If this persists, an administrator must reconcile the upload service.',
+        );
+    }
     const j = (await job.get()).data()!;
     if (!j.membersCaptured) {
       const members = await ref.collection('members').get();
@@ -153,6 +179,7 @@ export async function cleanSession(id: string, hooks: CleanupHooks = {}) {
       await removeIdentity(uid, id, lease);
     }
     await removeQuery(store.collection('codes').where('sessionId', '==', id));
+    await removeQuery(store.collection('limits').where('sessionId', '==', id));
     await store.recursiveDelete(ref);
     await ownLease();
     await verifyDeleted(id);
@@ -185,4 +212,36 @@ export async function sweep() {
   for (const job of jobs.docs) if (job.data().retryAt <= Date.now()) await cleanSession(job.id);
   // Includes pre-migration hashed limits; never keep expired abuse records indefinitely.
   await removeQuery(store.collection('limits').where('resetAt', '<=', Date.now()));
+  await sweepAnonymousAccounts(Date.now() - retentionMs());
+}
+
+// Auth sign-ups that never joined are also temporary. The identity lock and
+// getUser check in admission prevent a concurrent join from reviving deletion.
+export async function sweepAnonymousAccounts(cutoff: number) {
+  let pageToken: string | undefined;
+  do {
+    const page = await adminAuth.listUsers(1000, pageToken);
+    for (const user of page.users) {
+      if (
+        user.customClaims?.facilitator ||
+        user.providerData.length ||
+        user.email ||
+        user.phoneNumber ||
+        Date.parse(user.metadata.lastSignInTime || user.metadata.creationTime) > cutoff
+      )
+        continue;
+      const ref = store.doc(`identities/${user.uid}`);
+      const unused = await store.runTransaction(async (tx) => {
+        const current = await tx.get(ref);
+        if (Object.keys(current.data()?.sessions ?? {}).length) return false;
+        tx.set(ref, { sessions: {}, deleting: true, anonymous: true });
+        return true;
+      });
+      if (!unused) continue;
+      await adminAuth.deleteUser(user.uid);
+      await removeQuery(store.collection('limits').where('uid', '==', user.uid));
+      await ref.delete();
+    }
+    pageToken = page.pageToken;
+  } while (pageToken);
 }

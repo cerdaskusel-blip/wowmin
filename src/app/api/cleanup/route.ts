@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import { identity, requireOrigin, failure, boundedText, ApiError, sessionRef } from '@/lib/server';
 import { closeSession, cleanSession, ticket, checkTicket, verifyDeleted } from '@/lib/cleanup';
@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     if (data.action === 'end') {
       if (!data.confirmed) throw new ApiError(400, 'Explicit deletion confirmation is required.');
       await closeSession(data.sessionId, user.uid);
+      after(() => cleanSession(data.sessionId));
     } else if (data.ticket) checkTicket(data.sessionId, user.uid, data.ticket);
     else {
       const job = await store.doc(`cleanupJobs/${data.sessionId}`).get();
