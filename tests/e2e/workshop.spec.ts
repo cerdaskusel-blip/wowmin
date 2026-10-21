@@ -81,7 +81,6 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
   await hit;
   await host.getByRole('button', { name: 'Back to review desk' }).click();
   release();
-  await host.unroute('**/api/action');
   await expect(alice.getByText('Let’s give it another try.')).toBeVisible();
   await expect(
     host
