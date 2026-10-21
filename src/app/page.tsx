@@ -13,10 +13,35 @@ import {
   Zap,
 } from 'lucide-react';
 import { Header, StickerArt, ErrorMessage } from '@/components/ui';
-import { api, auth } from '@/lib/firebase';
+import Link from 'next/link';
+import { doc, getDoc } from 'firebase/firestore';
+import { useIdentity } from '@/components/provider';
+import { api, auth, db } from '@/lib/firebase';
 function Join() {
   const search = useSearchParams();
   const router = useRouter();
+  const { user } = useIdentity();
+  const [resume, setResume] = useState<{ id: string; title: string } | null>(null);
+  useEffect(() => {
+    if (!user) {
+      setResume(null);
+      return;
+    }
+    let active = true;
+    try {
+      const id = localStorage.getItem('wow-last-session');
+      if (id && /^[\w-]+$/.test(id))
+        getDoc(doc(db, 'sessions', id))
+          .then((s) => {
+            if (active && s.exists() && s.data().expiresAt > Date.now())
+              setResume({ id, title: s.data().title });
+          })
+          .catch(() => {});
+    } catch {}
+    return () => {
+      active = false;
+    };
+  }, [user]);
   const [code, setCode] = useState('');
   const [nickname, setNickname] = useState('');
   const [busy, setBusy] = useState(false);
@@ -31,7 +56,9 @@ function Join() {
     try {
       if (!auth.currentUser) await signInAnonymously(auth);
       const data = await api('join', { code: code.toUpperCase().replace(/\s/g, ''), nickname });
-      localStorage.setItem('wow-last-session', data.sessionId);
+      try {
+        localStorage.setItem('wow-last-session', data.sessionId);
+      } catch {}
       router.push(`/session/${data.sessionId}`);
     } catch (e) {
       setError((e as Error).message);
@@ -40,6 +67,14 @@ function Join() {
   }
   return (
     <form className="join-card" onSubmit={join}>
+      {resume && (
+        <div className="resume-session">
+          <p>Your workshop is still here.</p>
+          <Link className="button secondary full" href={`/session/${resume.id}`}>
+            Resume workshop · {resume.title}
+          </Link>
+        </div>
+      )}
       <div className="join-heading">
         <span className="live-dot" /> YOUR SEAT AT THE CREATIVE TABLE
       </div>

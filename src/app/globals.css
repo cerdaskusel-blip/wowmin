@@ -1,8 +1,8 @@
 :root {
   --paper: #faf9f5;
   --ink: #292c29;
-  --muted: #777971;
-  --coral: #e96a4c;
+  --muted: #555b51;
+  --coral: #b64028;
   --line: #e3e3db;
   --mint: #e5eee8;
   --lavender: #eeebf7;
@@ -112,7 +112,7 @@ em {
   top: -11px;
 }
 .brand-tag {
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1.5px;
   line-height: 1.5;
   border-left: 1px solid #cfcfc6;
@@ -143,7 +143,7 @@ em {
   padding: 57px 0 51px;
 }
 .eyebrow {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 1.6px;
   display: flex;
@@ -156,7 +156,7 @@ em {
   border-radius: 4px;
   background: #f5eee5;
   color: #895c45;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 1px;
 }
 .hero h1 {
@@ -190,7 +190,7 @@ em {
   display: flex;
   flex-wrap: wrap;
   gap: 17px;
-  font-size: 10px;
+  font-size: 12px;
   margin: 23px 0 29px;
   color: #63695e;
 }
@@ -214,7 +214,7 @@ em {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1.4px;
   font-weight: 700;
   color: #7c7e73;
@@ -234,7 +234,7 @@ em {
 }
 .join-card > p {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 .form-row {
   display: grid;
@@ -244,13 +244,13 @@ em {
 }
 label {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.6;
 }
 label > span {
   float: right;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--muted);
 }
@@ -317,14 +317,14 @@ input::placeholder {
 .small {
   min-height: 36px;
   padding: 9px 12px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .join-foot {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 9px;
+  font-size: 12px;
   color: #96998c;
   margin-top: 14px;
 }
@@ -583,7 +583,7 @@ input::placeholder {
   right: 6px;
   bottom: 103px;
   transform: rotate(-7deg);
-  font-size: 11px;
+  font-size: 12px;
   color: #9a796b;
   background: #f4e6dc;
   border: 1px solid #e8d6c6;
@@ -597,7 +597,7 @@ input::placeholder {
   color: #bd8e70;
 }
 .art-caption {
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1.8px;
   position: absolute;
   bottom: 4px;
@@ -616,7 +616,7 @@ input::placeholder {
 }
 .journey-title > .eyebrow {
   color: #8c8e80;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1.3px;
 }
 .journey-title h2 {
@@ -661,7 +661,7 @@ input::placeholder {
   color: #aa8c42;
 }
 .journey-step small {
-  font-size: 7px;
+  font-size: 12px;
   color: #929585;
   letter-spacing: 1.2px;
 }
@@ -672,7 +672,7 @@ input::placeholder {
 }
 .journey-step p {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.6;
 }
 footer {
@@ -683,7 +683,7 @@ footer {
   gap: 20px;
   padding: 22px 0;
   color: #989a8c;
-  font-size: 9px;
+  font-size: 12px;
 }
 .footer-logo {
   font-size: 23px;
@@ -760,7 +760,7 @@ footer {
   justify-content: center;
   gap: 7px;
   color: #7a7f70;
-  font-size: 11px;
+  font-size: 12px;
   padding: 12px 0;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -820,7 +820,7 @@ footer {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  font-size: 9px;
+  font-size: 12px;
   color: #6c9277;
   font-weight: 500;
 }
@@ -828,7 +828,7 @@ footer {
   color: #b98436;
 }
 .room-code {
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 1.5px;
   display: flex;
   align-items: center;
@@ -853,7 +853,7 @@ footer {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 10px;
+  font-size: 12px;
   color: #a0a296;
 }
 .stage-strip b {
@@ -863,7 +863,7 @@ footer {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 9px;
+  font-size: 12px;
 }
 .stage-strip .active {
   color: var(--coral);
@@ -915,7 +915,7 @@ footer {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 7px;
+  font-size: 12px;
   letter-spacing: 1.2px;
   color: #8a8d80;
 }
@@ -949,7 +949,7 @@ footer {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: 12px;
   color: #858978;
 }
 .host-controls > span svg {
@@ -989,13 +989,13 @@ footer {
 }
 .section-label > span,
 .section-label > small {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--muted);
 }
 .count-badge {
   padding: 4px 8px;
   border-radius: 5px;
-  font-size: 11px;
+  font-size: 12px;
   background: #efefe8;
   letter-spacing: 0;
 }
@@ -1023,7 +1023,7 @@ footer {
   margin-bottom: 8px;
 }
 .empty p {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   max-width: 390px;
   margin: auto;
@@ -1034,7 +1034,7 @@ footer {
 }
 .join-panel .eyebrow {
   justify-content: center;
-  font-size: 8px;
+  font-size: 12px;
 }
 .join-panel h3 {
   font-size: 21px;
@@ -1048,7 +1048,7 @@ footer {
   border: 1px solid var(--line);
 }
 .join-panel p {
-  font-size: 10px;
+  font-size: 12px;
   margin: 16px 0 5px;
 }
 .big-code {
@@ -1063,7 +1063,7 @@ footer {
   font-size: 17px;
 }
 .progress-panel > p {
-  font-size: 10px;
+  font-size: 12px;
   margin-top: 6px;
 }
 .member-row {
@@ -1072,7 +1072,7 @@ footer {
   gap: 9px;
   padding: 10px 0;
   border-top: 1px solid #efefe9;
-  font-size: 10px;
+  font-size: 12px;
 }
 .member-row > span:nth-child(2) {
   overflow-wrap: anywhere;
@@ -1085,12 +1085,12 @@ footer {
   display: inline-grid;
   place-items: center;
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: 12px;
   border-radius: 50%;
   color: #8c78a4;
 }
 .member-row small {
-  font-size: 8px;
+  font-size: 12px;
   color: #7b907b;
   white-space: nowrap;
 }
@@ -1128,7 +1128,7 @@ footer {
   overflow-wrap: anywhere;
 }
 .moderation-card p {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   margin: 5px 0 10px;
 }
@@ -1139,7 +1139,7 @@ footer {
 .two-buttons .button {
   flex: 1;
   padding: 9px;
-  font-size: 10px;
+  font-size: 12px;
 }
 .gallery-art {
   position: relative;
@@ -1174,7 +1174,7 @@ footer {
   overflow-wrap: anywhere;
 }
 .gallery-card p {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -1185,7 +1185,7 @@ footer {
   background: #fff8e9;
   padding: 7px;
   border-radius: 5px;
-  font-size: 8px;
+  font-size: 12px;
   color: var(--coral);
   display: flex;
   align-items: center;
@@ -1197,7 +1197,7 @@ footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
   color: #878c7a;
 }
@@ -1234,7 +1234,7 @@ footer {
   transform: rotate(9deg);
 }
 .pill {
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1px;
   font-weight: 600;
   background: #fff7e4;
@@ -1266,7 +1266,7 @@ footer {
   width: 25px;
   height: 25px;
   border-radius: 50%;
-  font-size: 10px;
+  font-size: 12px;
   display: inline-grid;
   place-items: center;
   letter-spacing: 0;
@@ -1281,7 +1281,7 @@ footer {
   border: 1px solid var(--line);
   background: #fafbf8;
   border-radius: 7px;
-  font-size: 10px;
+  font-size: 12px;
   padding: 14px 5px;
   display: flex;
   flex-direction: column;
@@ -1298,7 +1298,7 @@ footer {
   color: #a2523e;
 }
 .lab-panel > p {
-  font-size: 11px;
+  font-size: 12px;
   margin-bottom: 15px;
 }
 .caption-options {
@@ -1311,7 +1311,7 @@ footer {
   border: 1px solid #e3e4db;
   background: #fff;
   border-radius: 7px;
-  font-size: 11px;
+  font-size: 12px;
   padding: 13px 9px;
   line-height: 1.5;
   text-align: left;
@@ -1337,7 +1337,7 @@ footer {
   gap: 10px;
   position: relative;
   padding: 16px 6px;
-  font-size: 10px;
+  font-size: 12px;
 }
 .style-options button span {
   font-size: 30px;
@@ -1353,7 +1353,7 @@ footer {
   border-color: #e6dfd3;
 }
 .prompt-panel > .eyebrow {
-  font-size: 8px;
+  font-size: 12px;
   color: #9c856c;
 }
 .prompt-panel h2 {
@@ -1368,7 +1368,7 @@ footer {
   margin: 22px 0;
 }
 .prompt-preview .pill {
-  font-size: 7px;
+  font-size: 12px;
   background: #f7f3fb;
   color: #8f7d9e;
 }
@@ -1383,7 +1383,7 @@ footer {
 }
 .generated-prompt {
   background: #fbfaf6;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.8;
   resize: vertical;
   color: #77766a;
@@ -1395,7 +1395,7 @@ footer {
   padding-top: 19px;
 }
 .external-tools > small {
-  font-size: 7px;
+  font-size: 12px;
   letter-spacing: 1px;
   color: #8e8c7b;
 }
@@ -1412,10 +1412,10 @@ footer {
   border: 1px solid #dedbd1;
   border-radius: 5px;
   padding: 9px 10px;
-  font-size: 10px;
+  font-size: 12px;
 }
 .external-tools p {
-  font-size: 10px;
+  font-size: 12px;
   color: #8d8c7c;
 }
 .upload-panel h2 {
@@ -1448,7 +1448,7 @@ footer {
   max-width: 100%;
 }
 .upload-zone span {
-  font-size: 9px;
+  font-size: 12px;
   float: none;
 }
 .upload-zone input {
@@ -1481,7 +1481,7 @@ footer {
   margin-top: 10px;
 }
 .submission-status p {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
 }
 .submission-status.rejected {
@@ -1584,7 +1584,7 @@ footer {
   gap: 10px;
 }
 .winner-rank > span {
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1px;
 }
 .winner img {
@@ -1598,7 +1598,7 @@ footer {
   overflow-wrap: anywhere;
 }
 .winner p {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   margin-top: 7px;
 }
@@ -1638,7 +1638,7 @@ footer {
   border-bottom: 1px solid var(--line);
 }
 .projector .brand-tag {
-  font-size: 9px;
+  font-size: 12px;
 }
 .projector .room-code b {
   font-size: 28px;
@@ -1707,7 +1707,7 @@ footer {
   font-size: 16px;
 }
 .projected-sticker > span {
-  font-size: 11px;
+  font-size: 12px;
   color: #9c9e8f;
   display: block;
   margin-top: 10px;
@@ -1727,7 +1727,7 @@ footer {
 }
 .projector > footer {
   margin-top: 25px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .projector .results {
   flex: 1;
@@ -1833,7 +1833,7 @@ footer {
     gap: 10px;
   }
   .hero-chips span {
-    font-size: 9px;
+    font-size: 12px;
   }
   .journey-grid {
     gap: 15px;
@@ -1885,7 +1885,7 @@ footer {
     font-size: 42px;
   }
   .host-link {
-    font-size: 11px;
+    font-size: 12px;
   }
   .home {
     padding: 0 24px;
@@ -1954,11 +1954,11 @@ footer {
     font-size: 14px;
   }
   .hero-chips {
-    font-size: 11px;
+    font-size: 12px;
     gap: 18px;
   }
   .hero-chips span {
-    font-size: 10px;
+    font-size: 12px;
   }
   .journey-title {
     display: block;
@@ -1975,11 +1975,11 @@ footer {
     font-size: 14px;
   }
   .journey-step p {
-    font-size: 11px;
+    font-size: 12px;
   }
   footer {
     flex-wrap: wrap;
-    font-size: 9px;
+    font-size: 12px;
   }
   footer > span:last-child {
     display: none;
@@ -2012,17 +2012,17 @@ footer {
     font-size: 28px;
   }
   .stage-heading .eyebrow {
-    font-size: 8px;
+    font-size: 12px;
     letter-spacing: 1px;
   }
   .countdown {
     padding: 10px 13px;
   }
   .countdown small {
-    font-size: 6px;
+    font-size: 12px;
   }
   .stage-heading p {
-    font-size: 11px;
+    font-size: 12px;
   }
   .timer {
     font-size: 31px;
@@ -2112,7 +2112,7 @@ footer {
   }
   .room-footer {
     gap: 14px;
-    font-size: 8px;
+    font-size: 12px;
   }
   .room-footer .connection {
     display: none;
@@ -2133,10 +2133,10 @@ footer {
   .hero-chips {
     gap: 10px;
     margin: 22px 0;
-    font-size: 9px;
+    font-size: 12px;
   }
   .hero-chips span {
-    font-size: 8px;
+    font-size: 12px;
     gap: 4px;
   }
   .hero-chips svg {
@@ -2149,14 +2149,14 @@ footer {
     font-size: 21px;
   }
   .join-card > p {
-    font-size: 10px;
+    font-size: 12px;
   }
   .form-row {
     grid-template-columns: 1fr 1.4fr;
     gap: 10px;
   }
   .join-foot {
-    font-size: 8px;
+    font-size: 12px;
     gap: 3px;
   }
   .hero-art {
@@ -2206,19 +2206,19 @@ footer {
     font-size: 14px;
   }
   .journey-step p {
-    font-size: 11px;
+    font-size: 12px;
   }
   .journey-step small {
-    font-size: 8px;
+    font-size: 12px;
   }
   .journey-title > .eyebrow {
-    font-size: 8px;
+    font-size: 12px;
   }
   .room-code b {
     font-size: 14px;
   }
   .room-code {
-    font-size: 8px;
+    font-size: 12px;
   }
   .stage-heading {
     gap: 12px;
@@ -2230,17 +2230,17 @@ footer {
     margin-top: 12px;
   }
   .stage-heading .eyebrow {
-    font-size: 7px;
+    font-size: 12px;
     letter-spacing: 0.8px;
   }
   .stage-heading p {
-    font-size: 10px;
+    font-size: 12px;
   }
   .countdown {
     padding: 9px 10px;
   }
   .countdown small {
-    font-size: 5px;
+    font-size: 12px;
     letter-spacing: 0.5px;
   }
   .countdown small svg {
@@ -2270,19 +2270,19 @@ footer {
     font-size: 20px;
   }
   .collection-tabs button {
-    font-size: 9px;
+    font-size: 12px;
   }
   .caption-options button {
-    font-size: 10px;
+    font-size: 12px;
   }
   .lab-panel label {
-    font-size: 11px;
+    font-size: 12px;
   }
   .style-options {
     gap: 7px;
   }
   .style-options button {
-    font-size: 9px;
+    font-size: 12px;
   }
   .host-sidebar {
     grid-template-columns: 1fr;
@@ -2298,7 +2298,7 @@ footer {
     flex-basis: 100%;
   }
   .host-controls > span {
-    font-size: 9px;
+    font-size: 12px;
     gap: 3px;
   }
   .host-controls > span svg {
@@ -2320,7 +2320,7 @@ footer {
     gap: 5px;
   }
   .gallery-card .button {
-    font-size: 9px;
+    font-size: 12px;
     min-height: 40px;
     padding: 8px 4px;
   }
@@ -2329,21 +2329,21 @@ footer {
     align-items: flex-start;
   }
   .gallery-card h3 {
-    font-size: 11px;
+    font-size: 12px;
   }
   .gallery-card p {
-    font-size: 9px;
+    font-size: 12px;
   }
   .gallery-card .avatar {
     width: 21px;
     height: 21px;
-    font-size: 9px;
+    font-size: 12px;
   }
   .results > h2 {
     font-size: 43px;
   }
   .results > p {
-    font-size: 11px;
+    font-size: 12px;
   }
   .podium {
     gap: 18px;
@@ -2368,10 +2368,10 @@ footer {
     font-size: 28px;
   }
   .projector-heading p {
-    font-size: 11px;
+    font-size: 12px;
   }
   .projector-heading .eyebrow {
-    font-size: 7px;
+    font-size: 12px;
   }
   .timer.large {
     font-size: 45px;
@@ -2383,7 +2383,7 @@ footer {
     display: none;
   }
   .projector > footer {
-    font-size: 8px;
+    font-size: 12px;
   }
   .projector .results > h2 {
     font-size: 45px;
@@ -2395,7 +2395,7 @@ footer {
     padding: 20px;
   }
   .error {
-    font-size: 11px;
+    font-size: 12px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2440,4 +2440,790 @@ footer {
 footer > span:last-child {
   align-items: center;
   gap: 5px;
+}
+
+/* Live workshop interaction and accessibility improvements. */
+[hidden] {
+  display: none !important;
+}
+select {
+  font: inherit;
+  max-width: 100%;
+  padding: 10px;
+  border: 1px solid #93998c;
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+}
+:focus-visible {
+  outline: 3px solid #6850a7;
+  outline-offset: 3px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+button,
+input,
+textarea,
+select {
+  scroll-margin-block: 180px;
+}
+.button,
+.text-button {
+  min-height: 44px;
+  font-size: 14px;
+}
+.fine-print,
+.join-foot,
+.join-heading,
+.hero-description,
+.hero-chips,
+.art-caption,
+.external-tools p,
+.external-tools small,
+.lab-panel p,
+.stage-heading p,
+.stage-strip span,
+.stage-strip span b,
+.room-footer,
+.progress-panel p,
+.member-row small,
+.gallery-card p,
+.results > p,
+.winner p,
+.results-note,
+.projector > footer,
+.countdown small {
+  color: #555b51;
+}
+.stage-strip .active,
+.stage-strip .active b {
+  color: #a43320;
+}
+.stage-strip .active b {
+  color: white;
+  background: #a43320;
+}
+.stage-strip .done {
+  color: #355a43;
+}
+.stage-strip {
+  position: relative;
+}
+label,
+.generated-prompt,
+.fine-print,
+.external-tools p,
+.collection-tabs button,
+.caption-options button,
+.style-options button {
+  font-size: 14px;
+}
+input,
+textarea {
+  font-size: 16px;
+}
+.generated-prompt {
+  line-height: 1.65;
+}
+.external-tools ol {
+  padding-left: 22px;
+  line-height: 1.65;
+  font-size: 14px;
+}
+.external-tools a {
+  font-size: 14px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.prompt-preview {
+  padding: 20px;
+  min-height: 0;
+}
+.prompt-preview blockquote {
+  font-size: 22px;
+}
+.live-stage-bar {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  background: #faf9f5f5;
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  margin: 0 0 20px;
+}
+.live-stage-bar .timer {
+  font-size: 26px;
+  white-space: nowrap;
+}
+.live-stage-bar > span:first-child {
+  font-weight: 700;
+}
+.live-stage-bar .connection {
+  font-size: 13px;
+  color: #355a43;
+}
+.live-stage-bar .connection.offline {
+  color: #a43320;
+}
+.participant-experience {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.participant-experience.stage-submit > .upload-panel {
+  order: -1;
+}
+.participant-experience.stage-submit .participant-lab .lab-grid {
+  grid-template-columns: 1fr 1fr;
+}
+.participant-experience > .upload-panel {
+  margin: 0;
+  max-width: 760px;
+  width: 100%;
+  align-self: center;
+}
+.participant-experience.stage-gallery .upload-panel,
+.participant-experience.stage-vote .upload-panel,
+.participant-experience.stage-results .upload-panel {
+  padding: 16px;
+}
+.submission-status {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 6px 16px;
+  text-align: left;
+  align-items: center;
+}
+.submission-status img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  grid-row: span 2;
+}
+.submission-status b,
+.submission-status p {
+  margin: 0;
+}
+.upload-preview {
+  margin: 16px 0;
+  text-align: center;
+}
+.upload-preview img {
+  max-height: 240px;
+  max-width: 100%;
+  border-radius: 16px;
+}
+.upload-preview figcaption {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.upload-zone {
+  min-height: 110px;
+}
+.upload-zone:focus-within {
+  outline: 3px solid #6850a7;
+}
+.upload-panel .notice,
+.upload-panel .error {
+  margin: 14px 0;
+}
+.mobile-task-actions {
+  display: none;
+}
+.host-controls {
+  position: sticky;
+  top: 68px;
+  z-index: 10;
+  display: block;
+  padding: 16px;
+  background: white;
+  box-shadow: 0 5px 15px #292c2910;
+}
+.live-totals {
+  display: flex;
+  gap: 12px 22px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+}
+.live-totals span {
+  font-size: 14px;
+  color: #434b40;
+}
+.host-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+.manual-stages {
+  margin-top: 12px;
+  font-size: 14px;
+}
+summary {
+  cursor: pointer;
+  padding: 8px 0;
+}
+.manual-stages p {
+  margin: 12px 0;
+}
+.review-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+}
+.review-toolbar label {
+  flex: 1;
+  min-width: 150px;
+}
+.review-toolbar input {
+  margin-top: 0;
+}
+.moderation-grid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 8px;
+  align-items: start;
+}
+.moderation-card {
+  padding: 12px;
+}
+.moderation-card p {
+  font-size: 14px;
+}
+.moderation-card img {
+  aspect-ratio: 1;
+  object-fit: contain;
+  width: 100%;
+}
+.moderation-card .two-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.moderation-card .two-buttons button {
+  flex: 1;
+}
+.progress-panel {
+  max-height: 600px;
+}
+.host-grid {
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+.wall-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+.wall-toolbar h2 {
+  font-size: 24px;
+}
+.wall-toolbar p {
+  flex-basis: 100%;
+  color: #555b51;
+  font-size: 14px;
+}
+.wall-toolbar label {
+  max-width: 340px;
+}
+.wall-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+}
+.wall-grid .gallery-card {
+  padding: 10px;
+  min-width: 0;
+  animation: none;
+}
+.wall-image-button {
+  padding: 0;
+  border: 0;
+  background: #f3f1e9;
+  border-radius: 12px;
+  width: 100%;
+  display: block;
+  overflow: hidden;
+}
+.wall-image-button img {
+  width: 100%;
+  aspect-ratio: 1;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+.wall-grid h3 {
+  font-size: 16px;
+  margin: 10px 0 4px;
+  overflow-wrap: anywhere;
+}
+.wall-caption {
+  font-size: 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.wall-grid .button {
+  font-size: 13px;
+  padding: 8px;
+}
+.workshop-dialog {
+  width: min(560px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 24px;
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+.workshop-dialog::backdrop {
+  background: #232c25a6;
+  backdrop-filter: blur(4px);
+}
+.workshop-dialog h2 {
+  font-size: 26px;
+  margin-bottom: 18px;
+}
+.workshop-dialog > img {
+  display: block;
+  max-width: 100%;
+  width: 280px;
+  height: min(280px, 35dvh);
+  object-fit: contain;
+  margin: 0 auto 16px;
+  border-radius: 16px;
+}
+.workshop-dialog p {
+  margin: 14px 0;
+}
+.workshop-dialog .two-buttons {
+  margin-top: 20px;
+}
+.resume-session {
+  padding: 12px;
+  margin-bottom: 16px;
+  background: #e5eee8;
+  border-radius: 10px;
+}
+.resume-session .button {
+  white-space: normal;
+  text-align: center;
+}
+.results {
+  padding-top: 20px;
+}
+.results > h2 {
+  font-size: clamp(34px, 5vw, 60px);
+}
+.results .podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 20px;
+}
+.results .winner,
+.results .winner.rank-1 {
+  width: auto;
+  transform: none;
+  margin: 0;
+  padding: 20px;
+}
+.results .winner img {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: contain;
+}
+.winner-rank,
+.winner-rank span {
+  color: #76500b;
+}
+.projector {
+  height: 100dvh;
+  min-height: 0;
+  padding: 20px 40px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.projector > header {
+  flex: 0 0 auto;
+  padding: 0 0 14px;
+}
+.projector-heading {
+  margin: 18px 0;
+  flex: 0 0 auto;
+}
+.projector-heading h1 {
+  font-size: clamp(30px, 3.5vw, 62px);
+}
+.projector-heading p {
+  font-size: 18px;
+  color: #555b51;
+}
+.projector-heading .timer {
+  font-size: clamp(42px, 5vw, 80px);
+}
+.projector-body {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+.projector-showcase {
+  min-height: 0;
+  padding: 20px;
+}
+.projector .qr svg {
+  width: 280px;
+  height: 280px;
+}
+.projector .big-code {
+  font-size: 42px;
+}
+.projector > footer {
+  padding-top: 12px;
+  flex: 0 0 auto;
+  font-size: 14px;
+}
+.projector.has-wall .projector-body {
+  display: block;
+}
+.projector.has-wall .join-panel {
+  display: none;
+}
+.projector.has-wall .projector-showcase {
+  height: 100%;
+  display: block;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.projector-wall {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.projector-wall .wall-toolbar {
+  flex: 0 0 auto;
+  margin: 0 0 8px;
+}
+.projector-wall .wall-toolbar p {
+  flex-basis: auto;
+}
+.projector-wall .wall-grid {
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 8px;
+}
+.projector-wall .gallery-card {
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.projector-wall .wall-image-button {
+  flex: 1;
+  min-height: 0;
+  background: #f4f1e9;
+}
+.projector-wall .wall-image-button img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+}
+.projector-wall .gallery-card h3 {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  margin: 4px 0 0;
+  font-size: clamp(12px, 1vw, 18px);
+}
+.projector .results {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 0;
+}
+.projector .results > h2 {
+  font-size: clamp(32px, 3.8vw, 64px);
+  margin: 10px 0;
+}
+.projector .results > h2 br {
+  display: none;
+}
+.projector .results > h2 em::before {
+  content: ' ';
+}
+.projector .results > p {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+.projector .results .podium {
+  flex: 1;
+  min-height: 0;
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.projector .results .winner,
+.projector .results .winner.rank-1 {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: auto;
+  padding: 16px;
+  transform: none;
+}
+.projector .results .winner img {
+  flex: 1;
+  min-height: 0;
+  height: 0;
+  width: 100%;
+  max-height: none;
+  object-fit: contain;
+  margin: 12px 0;
+}
+.projector .results .winner h3 {
+  font-size: clamp(20px, 2vw, 32px);
+}
+.projector .results .winner p {
+  font-size: 16px;
+}
+.projector .results-note {
+  margin: 14px 0 0;
+}
+.winner-pages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+@media (max-width: 900px) {
+  .host-grid {
+    grid-template-columns: 1fr;
+  }
+  .host-sidebar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .host-controls {
+    top: 86px;
+  }
+  .projector {
+    padding: 16px;
+  }
+  .projector-wall .wall-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .hero-copy {
+    display: flex;
+    flex-direction: column;
+  }
+  .hero-copy .join-card {
+    order: -1;
+    margin: 0 0 24px;
+  }
+  .join-card input {
+    font-size: 16px;
+  }
+  .hero {
+    padding-top: 16px;
+  }
+  .room-main {
+    padding: 18px 16px;
+  }
+  .stage-heading {
+    margin-bottom: 14px;
+  }
+  .stage-heading .countdown {
+    display: none;
+  }
+  .stage-heading h1 {
+    font-size: 28px;
+  }
+  .stage-heading p {
+    font-size: 14px;
+  }
+  .live-stage-bar {
+    padding: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .live-stage-bar > span:first-child {
+    font-size: 13px;
+  }
+  .live-stage-bar .timer {
+    font-size: 22px;
+  }
+  .live-stage-bar .connection {
+    display: flex;
+    flex-basis: 100%;
+    font-size: 12px;
+  }
+  .participant-experience {
+    padding-bottom: 80px;
+  }
+  .mobile-task-actions {
+    display: flex;
+    position: fixed;
+    z-index: 20;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #faf9f5;
+    border-top: 1px solid #bfc4b6;
+    padding: 10px 16px max(10px, env(safe-area-inset-bottom));
+    gap: 10px;
+    flex-wrap: wrap;
+    box-shadow: 0 -4px 18px #292c2910;
+  }
+  .mobile-task-actions .button {
+    flex: 1;
+    font-size: 14px;
+  }
+  .mobile-task-actions > span:empty {
+    display: none;
+  }
+  .mobile-task-actions > span {
+    flex-basis: 100%;
+    font-size: 12px;
+  }
+  .lab-grid,
+  .participant-experience.stage-submit .participant-lab .lab-grid {
+    display: block;
+  }
+  .lab-panel {
+    padding: 16px;
+  }
+  .collection-tabs {
+    gap: 6px;
+  }
+  .collection-tabs button {
+    font-size: 13px;
+    min-height: 84px;
+  }
+  .caption-options button,
+  .style-options button {
+    font-size: 14px;
+  }
+  .style-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .prompt-panel {
+    margin-top: 20px;
+    padding: 18px;
+  }
+  .prompt-preview {
+    display: none;
+  }
+  .generated-prompt {
+    font-size: 16px;
+  }
+  .wall-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .wall-grid .gallery-card {
+    padding: 8px;
+  }
+  .wall-toolbar label {
+    width: 100%;
+    max-width: none;
+  }
+  .wall-grid h3 {
+    font-size: 14px;
+  }
+  .wall-caption {
+    font-size: 13px;
+  }
+  .host-controls {
+    position: static;
+  }
+  .host-actions .button {
+    flex: 1;
+  }
+  .host-sidebar {
+    display: block;
+  }
+  .host-sidebar > * {
+    margin-top: 20px;
+  }
+  .live-totals {
+    gap: 10px 16px;
+  }
+  .moderation-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 560px;
+  }
+  .results .podium {
+    grid-template-columns: 1fr;
+  }
+  .workshop-dialog {
+    padding: 20px;
+  }
+  .workshop-dialog h2 {
+    font-size: 24px;
+  }
+  .projector {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .projector.has-wall .projector-body {
+    flex: none;
+  }
+  .projector-wall .wall-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: auto;
+  }
+  .projector-wall .wall-image-button img {
+    aspect-ratio: 1;
+  }
+  .projector-wall .wall-image-button {
+    flex: auto;
+  }
+  .projector .results .podium {
+    grid-template-columns: 1fr;
+  }
+  .projector .results .winner img {
+    height: 180px;
+    flex: auto;
+  }
+  .winner-pages {
+    flex-wrap: wrap;
+  }
 }
