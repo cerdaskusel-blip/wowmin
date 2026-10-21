@@ -246,6 +246,11 @@ function Room({
           </span>
           <Timer end={session.stageEndsAt} pausedRemainingMs={session.pausedRemainingMs} />
           <Connection />
+          {!host && own?.status === 'rejected' && (
+            <a className="submission-feedback-link" href="#upload-sticker">
+              Sticker returned · View feedback
+            </a>
+          )}
         </div>
         {session.pausedRemainingMs != null && (
           <p className="notice" role="status">

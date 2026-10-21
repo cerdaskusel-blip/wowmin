@@ -167,6 +167,7 @@ test('submission recovery, pause, expiry, reopening and saved membership', async
     'Your selected image is still here',
   );
   await expect(p.getByAltText('Preview of your selected finished sticker')).toBeVisible();
+  await expect(p.locator('.upload-panel .error')).toBeInViewport();
   await capture(p, 'interrupted-upload-mobile');
   await p.unroute('**/api/upload');
   await reopen(host);
@@ -182,6 +183,7 @@ test('submission recovery, pause, expiry, reopening and saved membership', async
   await expect(
     p.getByText('Submissions are closed. Ask your facilitator', { exact: false }),
   ).toBeVisible();
+  await expect(p.getByRole('link', { name: 'Sticker returned · View feedback' })).toBeInViewport();
   await capture(p, 'returned-gallery-mobile');
   await host.getByLabel(/^Show/).selectOption('rejected');
   await host.getByRole('button', { name: 'Restore to wall' }).click();

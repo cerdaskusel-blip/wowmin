@@ -3359,3 +3359,14 @@ summary {
   border-radius: 8px;
   padding: 4px 7px;
 }
+.submission-feedback-link {
+  color: #96321e;
+  text-decoration: underline;
+  font-weight: 700;
+}
+.upload-error {
+  scroll-margin-block: 100px;
+}
+.upload-error:empty {
+  display: none;
+}

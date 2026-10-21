@@ -10,6 +10,13 @@ export function UploadPanel({ session, own }: { session: Workshop; own: Submissi
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const feedback = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (error) {
+      feedback.current?.focus({ preventScroll: true });
+      feedback.current?.scrollIntoView({ block: 'center' });
+    }
+  }, [error]);
   const { offset } = useIdentity();
   const now = useNow();
   const open = acceptingSubmissions(session, now + offset);
@@ -77,7 +84,9 @@ export function UploadPanel({ session, own }: { session: Workshop; own: Submissi
           </p>
         </div>
       )}
-      <ErrorMessage message={error} />
+      <div ref={feedback} tabIndex={-1} className="upload-error">
+        <ErrorMessage message={error} />
+      </div>
       {own?.status !== 'approved' && (
         <form onSubmit={upload}>
           {!open && (
