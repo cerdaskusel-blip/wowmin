@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse, after } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { identity, requireOrigin, failure, boundedText, ApiError, sessionRef } from '@/lib/server';
 import { closeSession, cleanSession, ticket, checkTicket, verifyDeleted } from '@/lib/cleanup';
@@ -28,6 +28,17 @@ export async function POST(req: NextRequest) {
         { headers: { 'Cache-Control': 'no-store' } },
       );
     }
+    if (data.action === 'status') {
+      const job = await store.doc(`cleanupJobs/${data.sessionId}`).get();
+      if (!job.exists) {
+        const session = (await sessionRef(data.sessionId).get()).data();
+        if (session?.hostId === user.uid)
+          return NextResponse.json(
+            { state: 'awaiting-confirmation', title: session.title },
+            { headers: { 'Cache-Control': 'no-store' } },
+          );
+      }
+    }
     if (data.action === 'end') {
       if (!data.confirmed) throw new ApiError(400, 'Explicit deletion confirmation is required.');
       if (data.ticket) checkTicket(data.sessionId, user.uid, data.ticket);
@@ -35,7 +46,7 @@ export async function POST(req: NextRequest) {
         (await sessionRef(data.sessionId).get()).exists ||
         (await store.doc(`cleanupJobs/${data.sessionId}`).get()).exists;
       if (exists || !data.ticket) await closeSession(data.sessionId, user.uid);
-      after(() => cleanSession(data.sessionId));
+      await cleanSession(data.sessionId);
     } else if (data.ticket) checkTicket(data.sessionId, user.uid, data.ticket);
     else {
       const job = await store.doc(`cleanupJobs/${data.sessionId}`).get();
@@ -60,11 +71,12 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Only unfinished jobs are listed; completed workshops leave no history record.
+// Owned workshops and unfinished attempts remain discoverable; no completed history is kept.
 export async function GET(req: NextRequest) {
   try {
     const user = await identity(req);
     if (user.facilitator !== true) throw new ApiError(403, 'Facilitator access is required.');
+    const workshops = await store.collection('sessions').where('hostId', '==', user.uid).get();
     const jobs = await store
       .collection('cleanupJobs')
       .where('hostId', '==', user.uid)
@@ -72,6 +84,13 @@ export async function GET(req: NextRequest) {
       .get();
     return NextResponse.json(
       {
+        workshops: workshops.docs
+          .filter((d) => d.data().lifecycle !== 'closing')
+          .map((d) => ({
+            id: d.id,
+            title: d.data().title,
+            expired: d.data().expiresAt <= Date.now(),
+          })),
         jobs: jobs.docs.map((job) => ({
           id: job.id,
           state: job.data().state,

@@ -7,7 +7,5 @@
 !tsconfig.json
 !src/
 !src/**
-!scripts/
-!scripts/cleanup-once.ts
 !Dockerfile
 !.dockerignore

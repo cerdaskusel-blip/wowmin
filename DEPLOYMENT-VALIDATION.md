@@ -1,3 +1,5 @@
+> Historical report for the previous automatic-cleanup design. Current behavior and results: [MANUAL-DELETION-VALIDATION.md](MANUAL-DELETION-VALIDATION.md). Do not use this report as current deployment instructions.
+
 # Deployment preparation validation
 
 Local checks on 22 October 2026 (Asia/Singapore). No production resources were

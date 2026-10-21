@@ -1,8 +1,0 @@
-title: WOWMIN cleanup storage
-description: Verify bucket privacy and delete workshop objects, without altering bucket policy.
-stage: GA
-includedPermissions:
-  - storage.buckets.get
-  - storage.objects.get
-  - storage.objects.list
-  - storage.objects.delete

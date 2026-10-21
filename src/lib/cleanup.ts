@@ -1,7 +1,6 @@
 import { createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
 import { adminAuth, store, bucket } from './admin';
 import { ApiError, sessionRef } from './server';
-import { retentionMs } from './lifecycle';
 
 function secret() {
   const value = process.env.CLEANUP_TICKET_SECRET;
@@ -21,20 +20,18 @@ export function checkTicket(id: string, hostId: string, value: string) {
   if (!/^[a-f0-9]{64}$/.test(value) || !timingSafeEqual(Buffer.from(value), Buffer.from(expected)))
     throw new ApiError(403, 'Cleanup authorization is invalid.');
 }
-export async function closeSession(id: string, hostId?: string) {
+export async function closeSession(id: string, hostId: string) {
   const ref = sessionRef(id);
   const job = store.doc(`cleanupJobs/${id}`);
   await store.runTransaction(async (tx) => {
     const [s, j] = await Promise.all([tx.get(ref), tx.get(job)]);
     const session = s.data();
-    if (hostId && (session?.hostId ?? j.data()?.hostId) !== hostId)
+    if ((session?.hostId ?? j.data()?.hostId) !== hostId)
       throw new ApiError(403, 'Only this workshop’s facilitator can end it.');
     if (!session) {
       if (!j.exists) throw new ApiError(404, 'Workshop not found.');
       return;
     }
-    if (!hostId && session.expiresAt > Date.now() && session.lifecycle !== 'closing')
-      throw new ApiError(409, 'Workshop is still active.');
     tx.update(ref, { lifecycle: 'closing' });
     tx.delete(store.doc(`codes/${session.code}`));
     if (!j.exists)
@@ -61,23 +58,33 @@ async function removeQuery(query: FirebaseFirestore.Query) {
 }
 async function removeIdentity(uid: string, sid: string, lease: string) {
   const ref = store.doc(`identities/${uid}`);
-  const removeAuth = await store.runTransaction(async (tx) => {
+  const eligible = await store.runTransaction(async (tx) => {
     const job = await tx.get(store.doc(`cleanupJobs/${sid}`));
-    if (job.data()?.lease !== lease) throw new Error('Cleanup lease changed');
+    const jobData = job.data();
+    if (jobData?.lease !== lease) throw new Error('Cleanup lease changed');
     const snapshot = await tx.get(ref);
     const data = snapshot.data();
+    // Durable admission evidence is captured before removing membership records.
+    // An arbitrary Auth UID or an unrelated identity record is never sufficient.
+    const temporary = (jobData.temporaryMembers ?? []).includes(uid) && uid !== jobData.hostId;
+    if (!temporary && !data?.sessions?.[sid]) return false;
     const sessions = { ...data?.sessions };
     delete sessions[sid];
     const unused = Object.keys(sessions).length === 0;
-    tx.set(ref, { sessions, anonymous: data?.anonymous ?? true, deleting: unused });
-    return unused;
+    if (temporary) tx.set(ref, { ...data, sessions, anonymous: true, deleting: unused });
+    else if (snapshot.exists) tx.update(ref, { sessions });
+    return temporary && unused;
   });
-  if (!removeAuth) return;
+  if (!eligible) return;
   try {
     const user = await adminAuth.getUser(uid);
-    // Admission permits only anonymous identities. Linking a provider later
-    // must not let a temporary participant evade deletion. Preserve facilitators.
-    if (!user.customClaims?.facilitator) {
+    // Preserve facilitators and identities that have become permanent accounts.
+    if (
+      !user.customClaims?.facilitator &&
+      !user.providerData.length &&
+      !user.email &&
+      !user.phoneNumber
+    ) {
       await adminAuth.deleteUser(uid);
       try {
         await adminAuth.getUser(uid);
@@ -89,8 +96,19 @@ async function removeIdentity(uid: string, sid: string, lease: string) {
   } catch (error) {
     if ((error as { code?: string }).code !== 'auth/user-not-found') throw error;
   }
-  await removeQuery(store.collection('limits').where('uid', '==', uid));
-  await ref.delete();
+  // Entry throttles belong to the deleted temporary identity only. Preserve them
+  // if Auth is retained (facilitator promotion or provider linking).
+  let deleted = false;
+  try {
+    await adminAuth.getUser(uid);
+  } catch (error) {
+    if ((error as { code?: string }).code !== 'auth/user-not-found') throw error;
+    deleted = true;
+  }
+  if (deleted) {
+    await removeQuery(store.collection('limits').where('uid', '==', uid));
+    await ref.delete();
+  } else await ref.update({ deleting: false, anonymous: false });
 }
 export async function verifyDeleted(id: string) {
   const ref = sessionRef(id);
@@ -158,18 +176,40 @@ export async function cleanSession(id: string, hooks: CleanupHooks = {}) {
     for (const upload of uploads.docs) {
       // A complete object proves the sole non-resumable Storage write landed.
       // No SDK retries or second writes can run for this unique object path.
-      const [exists] = await bucket.file(upload.data().path).exists();
+      const path = upload.data().path;
+      if (typeof path !== 'string' || !path.startsWith(`sessions/${id}/`))
+        throw new Error('Upload path is outside this workshop');
+      const [exists] = await bucket.file(path).exists();
       if (exists) await upload.ref.delete();
       else
         throw new Error(
           'Uploads are still settling. Retry cleanup. If this persists, an administrator must reconcile the upload service.',
         );
     }
-    const j = (await job.get()).data()!;
-    if (!j.membersCaptured) {
-      const members = await ref.collection('members').get();
-      await job.update({ members: members.docs.map((d) => d.id), membersCaptured: true });
-    }
+    await store.runTransaction(async (tx) => {
+      const j = (await tx.get(job)).data();
+      if (j?.lease !== lease) throw new Error('Cleanup lease changed');
+      if (j.membersCaptured) {
+        if (!Array.isArray(j.temporaryMembers))
+          throw new Error('Legacy cleanup needs admission provenance review');
+        return;
+      }
+      const members = await tx.get(ref.collection('members'));
+      const identities = await Promise.all(
+        members.docs.map((d) => tx.get(store.doc(`identities/${d.id}`))),
+      );
+      const temporaryMembers = identities
+        .filter(
+          (d) =>
+            d.data()?.anonymous === true && d.data()?.sessions?.[id] === true && d.id !== j.hostId,
+        )
+        .map((d) => d.id);
+      tx.update(job, {
+        members: members.docs.map((d) => d.id),
+        temporaryMembers,
+        membersCaptured: true,
+      });
+    });
     await ownLease();
     await hooks.beforeStorage?.();
     const [files] = await bucket.getFiles({ prefix: `sessions/${id}/` });
@@ -207,44 +247,4 @@ export async function cleanSession(id: string, hooks: CleanupHooks = {}) {
       });
     });
   }
-}
-export async function sweep() {
-  const expired = await store.collection('sessions').where('expiresAt', '<=', Date.now()).get();
-  for (const session of expired.docs) await closeSession(session.id);
-  const jobs = await store.collection('cleanupJobs').get();
-  for (const job of jobs.docs) if (job.data().retryAt <= Date.now()) await cleanSession(job.id);
-  // Includes pre-migration hashed limits; never keep expired abuse records indefinitely.
-  await removeQuery(store.collection('limits').where('resetAt', '<=', Date.now()));
-  await sweepAnonymousAccounts(Date.now() - retentionMs());
-}
-
-// Auth sign-ups that never joined are also temporary. The identity lock and
-// getUser check in admission prevent a concurrent join from reviving deletion.
-export async function sweepAnonymousAccounts(cutoff: number) {
-  let pageToken: string | undefined;
-  do {
-    const page = await adminAuth.listUsers(1000, pageToken);
-    for (const user of page.users) {
-      if (
-        user.customClaims?.facilitator ||
-        user.providerData.length ||
-        user.email ||
-        user.phoneNumber ||
-        Date.parse(user.metadata.lastSignInTime || user.metadata.creationTime) > cutoff
-      )
-        continue;
-      const ref = store.doc(`identities/${user.uid}`);
-      const unused = await store.runTransaction(async (tx) => {
-        const current = await tx.get(ref);
-        if (Object.keys(current.data()?.sessions ?? {}).length) return false;
-        tx.set(ref, { sessions: {}, deleting: true, anonymous: true });
-        return true;
-      });
-      if (!unused) continue;
-      await adminAuth.deleteUser(user.uid);
-      await removeQuery(store.collection('limits').where('uid', '==', user.uid));
-      await ref.delete();
-    }
-    pageToken = page.pageToken;
-  } while (pageToken);
 }

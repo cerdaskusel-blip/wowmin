@@ -2,13 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import sharp from 'sharp';
 import { adminAuth, store, bucket } from '../src/lib/admin';
-import {
-  cleanSession,
-  closeSession,
-  verifyDeleted,
-  sweep,
-  sweepAnonymousAccounts,
-} from '../src/lib/cleanup';
+import { cleanSession, closeSession, verifyDeleted } from '../src/lib/cleanup';
 import { retentionMs } from '../src/lib/lifecycle';
 if (
   process.env.FIREBASE_PROJECT_ID !== 'demo-wow' ||
@@ -96,7 +90,8 @@ async function waitDeleted(id: string, proof: string) {
       assert.equal((await store.doc(`cleanupJobs/${id}`).get()).exists, false);
       return;
     }
-    if (result.state === 'failed') await cleanSession(id);
+    if (result.state === 'failed')
+      await ok(await cleanupRequest(id, 'retry', host.idToken, { ticket: proof }));
     await new Promise((r) => setTimeout(r, 100));
   }
   throw new Error('Cleanup did not finish');
@@ -241,7 +236,7 @@ await cleanSession(right.id);
 await absentUser(shared.localId);
 await verifyDeleted(right.id);
 console.log(
-  'PASS concurrent termination/workers, session isolation, shared identity and ownership boundaries.',
+  'PASS concurrent manual cleanup requests, session isolation, shared identity and ownership boundaries.',
 );
 // Deterministic partial failures and a delayed Storage writer.
 const recovery = await create('Recovery');
@@ -334,10 +329,6 @@ console.log('PASS joins/votes racing termination; no subsequent mutations or ima
 const authFailure = await create('Auth deletion failure');
 const retained = await guest();
 await ok(await action(retained.idToken, 'join', { code: authFailure.code, nickname: 'Temporary' }));
-// A participant cannot escape deletion by attaching email after admission.
-await adminAuth.updateUser(retained.localId, {
-  email: `temporary-${retained.localId}@example.test`,
-});
 await closeSession(authFailure.id, host.localId);
 const originalDeleteUser = adminAuth.deleteUser.bind(adminAuth);
 adminAuth.deleteUser = async () => {
@@ -354,8 +345,8 @@ await cleanSession(authFailure.id);
 await absentUser(retained.localId);
 await verifyDeleted(authFailure.id);
 console.log('PASS anonymous Auth deletion failure remains retryable and cannot report completion.');
-// A killed cleaner leaves durable work; a new worker takes over only after lease expiry.
-const crash = await create('Worker crash');
+// A killed request leaves durable work; manual retry takes over only after lease expiry.
+const crash = await create('Manual request crash');
 const crashGuest = await guest();
 await ok(
   await action(crashGuest.idToken, 'join', { code: crash.code, nickname: 'Crash recovery' }),
@@ -383,9 +374,10 @@ await cleanSession(crash.id);
 await verifyDeleted(crash.id);
 await absentUser(crashGuest.localId);
 console.log('PASS process-crash recovery and lease exclusion.');
-const expired = await create('Automatic expiry');
+const expired = await create('Manual deletion after expiry');
 const expiredGuest = await guest();
 await ok(await action(expiredGuest.idToken, 'join', { code: expired.code, nickname: 'Expiry' }));
+await upload(expired.id, expiredGuest.idToken); // stage is closed; no image stored
 await expired.ref.update({ expiresAt: Date.now() - 1 });
 assert.equal((await action(host.idToken, 'advance', { sessionId: expired.id })).status, 410);
 assert.ok((await upload(expired.id, expiredGuest.idToken)).status >= 400);
@@ -393,14 +385,88 @@ assert.ok(
   (await action(expiredGuest.idToken, 'join', { code: expired.code, nickname: 'Expired' }))
     .status >= 400,
 );
-await sweep();
+assert.equal((await expired.ref.get()).exists, true);
+await adminAuth.getUser(expiredGuest.localId);
+assert.equal((await ok(await cleanupRequest(expired.id, 'status'))).state, 'awaiting-confirmation');
+// Merely authorizing or polling never starts deletion, even with an issued ticket.
+const authorization = await ok(await cleanupRequest(expired.id, 'authorize'));
+assert.equal(
+  (
+    await ok(
+      await cleanupRequest(expired.id, 'status', host.idToken, { ticket: authorization.ticket }),
+    )
+  ).state,
+  'awaiting-confirmation',
+);
+const pending = await ok(await fetch(`${origin}/api/cleanup`, { headers: headers(host.idToken) }));
+assert.ok(
+  pending.workshops.some((w: { id: string; expired: boolean }) => w.id === expired.id && w.expired),
+);
+assert.equal((await expired.ref.get()).exists, true);
+await ok(await cleanupRequest(expired.id, 'end', host.idToken, { confirmed: true }));
 await verifyDeleted(expired.id);
 await absentUser(expiredGuest.localId);
-const orphan = await guest();
-await sweepAnonymousAccounts(Date.now() + 1000);
-await absentUser(orphan.localId);
+// Preserve unrelated project data, orphan anonymous accounts, facilitator accounts,
+// permanent accounts and arbitrary member IDs without admission provenance.
+const unrelated = await guest();
+const protectedRoom = await create('Scope boundaries');
+const promoted = await guest();
+const linked = await guest();
+for (const u of [promoted, linked])
+  await ok(await action(u.idToken, 'join', { code: protectedRoom.code, nickname: 'Protected' }));
+await adminAuth.setCustomUserClaims(promoted.localId, { facilitator: true });
+await adminAuth.updateUser(linked.localId, { email: `linked-${linked.localId}@example.test` });
+await protectedRoom.ref
+  .collection('members')
+  .doc(unrelated.localId)
+  .set({ nickname: 'Unproven member' });
+await protectedRoom.ref
+  .collection('members')
+  .doc(host.localId)
+  .set({ nickname: 'Facilitator must survive' });
+const outsideDoc = store.doc('unrelatedApp/preserve');
+await outsideDoc.set({ marker: 'outside WOWMIN' });
+const outsideFile = bucket.file('unrelated-app/preserve.txt');
+await outsideFile.save('outside WOWMIN');
+try {
+  await ok(await cleanupRequest(protectedRoom.id, 'end', host.idToken, { confirmed: true }));
+  await verifyDeleted(protectedRoom.id);
+  for (const uid of [host.localId, promoted.localId, linked.localId, unrelated.localId])
+    await adminAuth.getUser(uid);
+  assert.equal((await outsideDoc.get()).data()!.marker, 'outside WOWMIN');
+  assert.equal((await outsideFile.exists())[0], true);
+} finally {
+  // Remove only synthetic fixtures this test created, never a production sweep.
+  await outsideDoc.delete();
+  await outsideFile.delete();
+  for (const uid of [promoted.localId, linked.localId, unrelated.localId]) {
+    await adminAuth.deleteUser(uid);
+    await store.doc(`identities/${uid}`).delete();
+  }
+}
 assert.equal((await adminAuth.getUser(host.localId)).customClaims?.facilitator, true);
 console.log(
-  'PASS immediate expiry denial, unattended sweep, abandoned anonymous account cleanup, and facilitator preservation.',
+  'PASS expiry retains data until manual confirmation; no automatic sweeps; unrelated data, facilitators and permanent accounts preserved.',
 );
-console.log('ALL EPHEMERAL INTEGRATION CHECKS PASSED');
+// Old pending records lack the new durable admission evidence: fail closed.
+const legacy = await create('Legacy pending cleanup');
+const legacyGuest = await guest();
+await ok(await action(legacyGuest.idToken, 'join', { code: legacy.code, nickname: 'Legacy' }));
+await closeSession(legacy.id, host.localId);
+const legacyJob = store.doc(`cleanupJobs/${legacy.id}`);
+await legacyJob.update({ membersCaptured: true, members: [legacyGuest.localId] });
+await cleanSession(legacy.id);
+assert.equal((await legacyJob.get()).data()!.state, 'failed');
+await adminAuth.getUser(legacyGuest.localId);
+// Trusted fixture recovery only after verifying original admission records exist.
+assert.equal((await legacy.ref.collection('members').doc(legacyGuest.localId).get()).exists, true);
+assert.equal(
+  (await store.doc(`identities/${legacyGuest.localId}`).get()).data()!.sessions[legacy.id],
+  true,
+);
+await legacyJob.update({ membersCaptured: false });
+await ok(await cleanupRequest(legacy.id, 'retry'));
+await verifyDeleted(legacy.id);
+await absentUser(legacyGuest.localId);
+console.log('PASS legacy pending jobs cannot claim success without admission evidence.');
+console.log('ALL MANUAL DELETION INTEGRATION CHECKS PASSED');

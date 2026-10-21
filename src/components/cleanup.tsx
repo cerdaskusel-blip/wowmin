@@ -31,7 +31,7 @@ async function cleanup(id: string, action: string, confirmed = false) {
   if (!response.ok)
     throw new Error(result.error || 'Could not check deletion. Retry when connected.');
   if (result.ticket) sessionStorage.setItem(key, result.ticket);
-  return result as { state: string; error?: string };
+  return result as { state: string; error?: string; title?: string };
 }
 export function EndSession({ id, title }: { id: string; title: string }) {
   const [confirm, setConfirm] = useState(false);
@@ -40,18 +40,19 @@ export function EndSession({ id, title }: { id: string; title: string }) {
   return (
     <>
       <button className="button secondary small" onClick={() => setConfirm(true)}>
-        End Session & Delete Data
+        Padam Semua Data Bengkel
       </button>
       {confirm && (
         <Modal
-          title="End Session & Delete Data?"
+          title="Padam Semua Data Bengkel?"
           onClose={() => {
             if (!busy) setConfirm(false);
           }}
         >
           <p>
-            <strong>{title}</strong> will close immediately. All participants, stickers, votes and
-            results will be permanently deleted. This cannot be undone.
+            <strong>{title}</strong> will close immediately. This session’s temporary participant
+            accounts, stickers, votes and results will be permanently deleted. This cannot be
+            undone.
           </p>
           <p>Wait for Cleanup Complete before closing the facilitator screen.</p>
           <ErrorMessage message={error} />
@@ -81,7 +82,7 @@ export function EndSession({ id, title }: { id: string; title: string }) {
                 }
               }}
             >
-              {busy ? 'Closing…' : 'Yes, end & delete all data'}
+              {busy ? 'Closing…' : 'Ya, padam semua data'}
             </button>
           </div>
         </Modal>
@@ -91,6 +92,7 @@ export function EndSession({ id, title }: { id: string; title: string }) {
 }
 export function CleanupStatus({ id }: { id: string }) {
   const [state, setState] = useState('checking');
+  const [title, setTitle] = useState('Workshop');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -102,6 +104,7 @@ export function CleanupStatus({ id }: { id: string }) {
         const result = await cleanup(id, 'status');
         if (stopped) return;
         setState(result.state);
+        if (result.title) setTitle(result.title);
         setError(result.error || '');
         if (result.state === 'complete') {
           sessionStorage.setItem(`wow-cleanup-complete-${id}`, 'true');
@@ -130,17 +133,22 @@ export function CleanupStatus({ id }: { id: string }) {
       <h1 aria-live="polite">
         {state === 'complete'
           ? 'Cleanup Complete'
-          : state === 'failed'
-            ? 'Cleanup failed'
-            : 'Workshop closed'}
+          : state === 'awaiting-confirmation'
+            ? 'Manual deletion required'
+            : state === 'failed'
+              ? 'Cleanup failed'
+              : 'Workshop closed'}
       </h1>
       <p>
         {state === 'complete'
           ? 'Deletion of this workshop’s platform data has been verified.'
-          : 'Joining, uploads and voting are closed. Deletion is not yet verified.'}
+          : state === 'awaiting-confirmation'
+            ? 'This workshop has expired. Its data remains until you confirm deletion below.'
+            : 'Joining, uploads and voting are closed. Deletion is not yet verified. No automatic cleanup runs; use retry if needed.'}
       </p>
       <ErrorMessage message={error} />
-      {state !== 'complete' && (
+      {state === 'awaiting-confirmation' && <EndSession id={id} title={title} />}
+      {state !== 'complete' && state !== 'awaiting-confirmation' && (
         <button
           className="button primary"
           disabled={busy}
@@ -173,6 +181,7 @@ export function CleanupStatus({ id }: { id: string }) {
 }
 
 export function PendingCleanups() {
+  const [workshops, setWorkshops] = useState<{ id: string; title: string; expired: boolean }[]>([]);
   const [jobs, setJobs] = useState<{ id: string; state: string; error: string }[]>([]);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -189,6 +198,7 @@ export function PendingCleanups() {
         const result = await response.json();
         if (!stopped) {
           setJobs(result.jobs);
+          setWorkshops(result.workshops || []);
           setError('');
         }
       } catch (e) {
@@ -205,6 +215,23 @@ export function PendingCleanups() {
   return (
     <section className="pending-cleanups" aria-label="Unfinished workshop cleanup">
       <ErrorMessage message={error} />
+      {workshops.length > 0 && (
+        <>
+          <h2>Workshops awaiting manual deletion</h2>
+          <p>
+            Data stays until you confirm Padam Semua Data Bengkel. There is no automatic cleanup.
+          </p>
+          {workshops.map((room) => (
+            <div className="panel" key={room.id}>
+              <h3>{room.title}</h3>
+              <p>{room.expired ? 'Expired · manual deletion required' : 'Open workshop'}</p>
+              <Link className="button secondary" href={`/session/${room.id}`}>
+                Open workshop / delete data
+              </Link>
+            </div>
+          ))}
+        </>
+      )}
       {jobs.length > 0 && (
         <>
           <h2>Unfinished cleanup</h2>

@@ -4,6 +4,7 @@ FIREBASE_PROJECT_ID: 'wowmin-workshop'
 FIREBASE_STORAGE_BUCKET: 'REPLACE_WITH_REGISTERED_BUCKET'
 NEXT_PUBLIC_USE_EMULATORS: 'false'
 NEXT_PUBLIC_APP_URL: 'https://wowmin-workshop.web.app'
+# Access expiry only; never starts deletion.
 WORKSHOP_RETENTION_HOURS: '4'
 # Keep false until actual Storage, Firestore backups and logging are reviewed.
 WORKSHOP_PRIVACY_REVIEWED: 'false'

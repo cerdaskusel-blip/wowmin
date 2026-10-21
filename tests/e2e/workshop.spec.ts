@@ -143,6 +143,41 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
   await expect(alice.getByText('2 votes. 2 creative minds.')).toBeVisible();
   await alice.screenshot({ path: 'test-results/participant-results.png', fullPage: true });
   await projector.screenshot({ path: 'test-results/projector-results.png', fullPage: true });
+  // Complete the actual workshop flow with manual deletion, without a worker.
+  const sessionId = host.url().split('/').pop()!;
+  process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+  process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
+  process.env.FIREBASE_STORAGE_EMULATOR_HOST = '127.0.0.1:9199';
+  const { initializeApp } = await import('firebase-admin/app');
+  const { getFirestore } = await import('firebase-admin/firestore');
+  const { getAuth } = await import('firebase-admin/auth');
+  const { getStorage } = await import('firebase-admin/storage');
+  const admin = initializeApp(
+    { projectId: 'demo-wow', storageBucket: 'demo-wow.appspot.com' },
+    `manual-${sessionId}`,
+  );
+  const db = getFirestore(admin);
+  const members = await db.collection(`sessions/${sessionId}/members`).get();
+  const hostId = (await db.doc(`sessions/${sessionId}`).get()).data()!.hostId;
+  await host.getByRole('button', { name: 'Padam Semua Data Bengkel', exact: true }).click();
+  await expect(host.getByRole('dialog')).toBeVisible();
+  await host.getByRole('button', { name: 'Ya, padam semua data' }).click();
+  await expect(host.getByRole('heading', { name: 'Cleanup Complete' })).toBeVisible();
+  expect((await db.doc(`sessions/${sessionId}`).get()).exists).toBe(false);
+  expect(await db.doc(`sessions/${sessionId}`).listCollections()).toHaveLength(0);
+  expect((await db.collection('codes').where('sessionId', '==', sessionId).get()).empty).toBe(true);
+  expect(
+    (
+      await getStorage(admin)
+        .bucket()
+        .getFiles({ prefix: `sessions/${sessionId}/` })
+    )[0],
+  ).toHaveLength(0);
+  for (const member of members.docs)
+    await expect(getAuth(admin).getUser(member.id)).rejects.toMatchObject({
+      code: 'auth/user-not-found',
+    });
+  expect((await getAuth(admin).getUser(hostId)).customClaims?.facilitator).toBe(true);
   await a.close();
   await b.close();
 });

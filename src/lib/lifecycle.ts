@@ -9,5 +9,8 @@ export function retentionMs() {
 }
 export function assertActive(session: FirebaseFirestore.DocumentData | undefined) {
   if (!session || session.lifecycle === 'closing' || session.expiresAt <= Date.now())
-    throw new ApiError(410, 'This workshop has ended. Its temporary data is being deleted.');
+    throw new ApiError(
+      410,
+      'This workshop has ended. Ask the facilitator to delete its temporary data.',
+    );
 }

@@ -20,7 +20,7 @@ test('confirmed deletion clears participant drafts, reports verified cleanup and
   await expect(participant.getByText('YOU’RE IN. LET’S GET CREATIVE.')).toBeVisible();
   await host.getByRole('button', { name: 'Next: Find your sticker voice' }).click();
   await participant.getByLabel('Make it yours').fill('Temporary caption');
-  await host.getByRole('button', { name: 'End Session & Delete Data', exact: true }).click();
+  await host.getByRole('button', { name: 'Padam Semua Data Bengkel', exact: true }).click();
   const dialog = host.getByRole('dialog');
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Keep workshop open' })).toBeFocused();
@@ -28,8 +28,8 @@ test('confirmed deletion clears participant drafts, reports verified cleanup and
   await host.screenshot({ path: 'test-results/ephemeral-confirmation.png', fullPage: true });
   await dialog.getByRole('button', { name: 'Keep workshop open' }).click();
   await expect(host.getByText('FACILITATOR DASHBOARD')).toBeVisible();
-  await host.getByRole('button', { name: 'End Session & Delete Data', exact: true }).click();
-  await host.getByRole('button', { name: 'Yes, end & delete all data' }).click();
+  await host.getByRole('button', { name: 'Padam Semua Data Bengkel', exact: true }).click();
+  await host.getByRole('button', { name: 'Ya, padam semua data' }).click();
   await expect(host.getByRole('heading', { name: 'Cleanup Complete' })).toBeVisible({
     timeout: 30_000,
   });
@@ -76,8 +76,8 @@ test('failed cleanup is discoverable on facilitator home and retry stays closed 
   const operation = admin.doc(`sessions/${id}/uploads/simulated-writer`);
   // Synthetic operation: no Storage request is issued. It models an unknown writer.
   await operation.set({ path: `sessions/${id}/unknown.webp`, startedAt: Date.now() });
-  await host.getByRole('button', { name: 'End Session & Delete Data', exact: true }).click();
-  await host.getByRole('button', { name: 'Yes, end & delete all data' }).click();
+  await host.getByRole('button', { name: 'Padam Semua Data Bengkel', exact: true }).click();
+  await host.getByRole('button', { name: 'Ya, padam semua data' }).click();
   await expect(host.getByRole('heading', { name: 'Cleanup failed', exact: true })).toBeVisible();
   await host.getByRole('link', { name: 'Create a new workshop' }).click();
   const job = host
@@ -97,4 +97,35 @@ test('failed cleanup is discoverable on facilitator home and retry stays closed 
   await expect(host.getByRole('heading', { name: 'Cleanup Complete' })).toBeVisible();
   await host.getByRole('link', { name: 'Create a new workshop' }).click();
   await expect(host.locator(`.pending-cleanups a[href="/session/${id}"]`)).toHaveCount(0);
+});
+
+test('expired workshop remains discoverable and requires manual deletion confirmation', async ({
+  page: host,
+}) => {
+  process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
+  const { getApps, initializeApp } = await import('firebase-admin/app');
+  const { getFirestore } = await import('firebase-admin/firestore');
+  const admin = getFirestore(getApps()[0] || initializeApp({ projectId: 'demo-wow' }));
+  await host.goto('/facilitator');
+  await host.getByRole('button', { name: 'Enter local facilitator studio' }).click();
+  await host.getByLabel('Workshop name').fill('Manual expired workshop');
+  await host.getByRole('button', { name: 'Create workshop' }).click();
+  await expect(host.getByText('FACILITATOR DASHBOARD')).toBeVisible();
+  const id = host.url().split('/').pop()!;
+  await admin.doc(`sessions/${id}`).update({ expiresAt: Date.now() - 1 });
+  await expect(host.getByRole('heading', { name: 'Manual deletion required' })).toBeVisible();
+  expect((await admin.doc(`sessions/${id}`).get()).exists).toBe(true);
+  await host.goto('/facilitator');
+  const card = host
+    .locator('.pending-cleanups .panel')
+    .filter({ has: host.locator(`a[href="/session/${id}"]`) });
+  await expect(card.getByText('Expired · manual deletion required')).toBeVisible();
+  await card.getByRole('link').click();
+  await host.getByRole('button', { name: 'Padam Semua Data Bengkel', exact: true }).click();
+  await host.getByRole('button', { name: 'Keep workshop open' }).click();
+  expect((await admin.doc(`sessions/${id}`).get()).exists).toBe(true);
+  await host.getByRole('button', { name: 'Padam Semua Data Bengkel', exact: true }).click();
+  await host.getByRole('button', { name: 'Ya, padam semua data' }).click();
+  await expect(host.getByRole('heading', { name: 'Cleanup Complete' })).toBeVisible();
+  expect((await admin.doc(`sessions/${id}`).get()).exists).toBe(false);
 });

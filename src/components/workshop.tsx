@@ -84,7 +84,7 @@ export function WorkshopView({ id, projector = false }: { id: string; projector?
       <main className="center-message">
         <h1>This workshop has ended</h1>
         <p>
-          Its temporary data is being deleted. Ask your facilitator for the next workshop’s new
+          Ask your facilitator to delete its temporary data and provide the next workshop’s new
           code.
         </p>
         <Link className="button primary" href="/">

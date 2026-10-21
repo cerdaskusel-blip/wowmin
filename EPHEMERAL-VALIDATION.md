@@ -1,3 +1,5 @@
+> Historical report for the previous automatic-cleanup design. Current behavior and results: [MANUAL-DELETION-VALIDATION.md](MANUAL-DELETION-VALIDATION.md). Do not use this report as current deployment instructions.
+
 # WOW #1 ephemeral sessions — validation report
 
 Implementation date: 21 October 2026. All execution used local `demo-wow` Firebase
