@@ -3335,3 +3335,27 @@ summary {
     gap: 10px;
   }
 }
+.host-controls .workshop-budget {
+  color: #555b51;
+  font-size: 14px;
+}
+.journey-title > .eyebrow,
+.journey-step small,
+.home footer > span,
+.hand-note,
+.cursor-tag,
+.pill {
+  color: #555b51;
+}
+.results > .eyebrow {
+  color: #76500b;
+}
+.coffee-steam {
+  color: #716548;
+}
+.sticker-art > span {
+  -webkit-text-stroke: 0;
+  background: #fff;
+  border-radius: 8px;
+  padding: 4px 7px;
+}

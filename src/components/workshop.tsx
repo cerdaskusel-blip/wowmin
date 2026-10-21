@@ -624,12 +624,20 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
 }
 function Results({ session, projector = false }: { session: Workshop; projector?: boolean }) {
   const [page, setPage] = useState(0);
+  const [cycling, setCycling] = useState(false);
+  useEffect(() => {
+    const preference = matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setCycling(!preference.matches);
+    update();
+    preference.addEventListener('change', update);
+    return () => preference.removeEventListener('change', update);
+  }, []);
   const pages = Math.max(1, Math.ceil((session.winners?.length || 0) / 3));
   useEffect(() => {
-    if (!projector || pages <= 1) return;
+    if (!projector || pages <= 1 || !cycling) return;
     const timer = setInterval(() => setPage((p) => (p + 1) % pages), 8000);
     return () => clearInterval(timer);
-  }, [projector, pages]);
+  }, [projector, pages, cycling]);
   const winners = projector ? session.winners?.slice(page * 3, page * 3 + 3) : session.winners;
   return (
     <section className="results">
@@ -691,6 +699,9 @@ function Results({ session, projector = false }: { session: Workshop; projector?
       )}
       {projector && pages > 1 && (
         <div className="winner-pages" aria-label="Tied winner pages">
+          <button className="button secondary" onClick={() => setCycling((value) => !value)}>
+            {cycling ? 'Pause winner pages' : 'Play winner pages'}
+          </button>
           <button
             className="button secondary"
             onClick={() => setPage((p) => (p - 1 + pages) % pages)}
@@ -698,7 +709,8 @@ function Results({ session, projector = false }: { session: Workshop; projector?
             Previous winners
           </button>
           <span>
-            Including all ties · {page + 1} / {pages} · changes every 8 seconds
+            Including all ties · {page + 1} / {pages} ·{' '}
+            {cycling ? 'changes every 8 seconds' : 'paused'}
           </span>
           <button className="button secondary" onClick={() => setPage((p) => (p + 1) % pages)}>
             Next winners
