@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Member, Submission, Workshop, STAGE_INFO, STAGES, Stage, nextStage } from '@/lib/workshop';
 import { Modal } from './modal';
-import { StickerImage, ErrorMessage } from './ui';
+import { StickerImage, ErrorMessage, WorkshopBudget } from './ui';
 type Act = (action: string, data?: Record<string, unknown>) => Promise<boolean>;
 export function HostControls({
   session,
@@ -64,6 +64,7 @@ export function HostControls({
             <b>{votes}</b> / {session.participantCount} votes cast
           </span>
         </div>
+        <WorkshopBudget session={session} />
         <div className="host-actions">
           <Link
             href={`/projector/${session.id}`}
@@ -195,7 +196,7 @@ export function ReviewDesk({
     const index = visible.findIndex((s) => s.id === sub.id);
     const following = visible[index + 1] || visible[index - 1];
     if (await act('moderate', { submissionId: sub.id, status, reason }))
-      setSelected(following?.id || null);
+      setSelected(selected ? following?.id || null : null);
   }
   return (
     <section className="review-desk">

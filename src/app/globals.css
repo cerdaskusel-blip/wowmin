@@ -3227,3 +3227,111 @@ summary {
     flex-wrap: wrap;
   }
 }
+.workshop-budget {
+  display: block;
+  color: #555b51;
+  font-size: 14px;
+  margin: 0 0 10px;
+}
+@media (max-width: 600px) {
+  .mobile-task-actions .button {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+  }
+}
+.button.primary {
+  background: #b64028;
+  color: #fff;
+}
+.button.primary:hover {
+  background: #96321e;
+}
+.number {
+  color: #45573a;
+}
+.prompt-panel > .eyebrow {
+  color: #705435;
+}
+.generated-prompt {
+  color: #51584e;
+}
+.connection {
+  color: #355a43;
+}
+.connection.offline {
+  color: #a43320;
+}
+.text-button {
+  color: #485440;
+}
+.avatar {
+  color: #55436d;
+}
+.lab-grid > .mobile-task-actions {
+  display: none;
+}
+.submission-status .submission-image {
+  width: 64px;
+  height: 64px;
+  margin: 0;
+}
+.submission-status b,
+.submission-status p {
+  font-size: 14px;
+}
+.participant-experience.stage-gallery .upload-panel h2,
+.participant-experience.stage-vote .upload-panel h2,
+.participant-experience.stage-results .upload-panel h2 {
+  display: none;
+}
+.participant-experience.stage-gallery .submission-status,
+.participant-experience.stage-vote .submission-status,
+.participant-experience.stage-results .submission-status {
+  margin: 0;
+  padding: 10px;
+}
+.gallery-banner {
+  color: #435a34;
+  padding: 14px;
+  margin-bottom: 0;
+}
+.projector-wall .wall-toolbar h2 {
+  margin-top: 0;
+}
+@media (min-width: 601px) and (max-height: 850px) {
+  .projector.has-wall .projector-heading {
+    margin: 10px 0;
+  }
+  .projector.has-wall .projector-heading h1 {
+    font-size: 32px;
+    margin: 4px 0;
+  }
+  .projector.has-wall .projector-heading .eyebrow {
+    display: none;
+  }
+  .projector.has-wall .projector-heading p {
+    font-size: 14px;
+  }
+  .projector.has-wall .projector-heading .timer {
+    font-size: 44px;
+  }
+  .projector.has-wall > footer {
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+  .projector-wall .wall-toolbar {
+    margin-bottom: 8px;
+  }
+  .projector-wall .wall-toolbar h2 {
+    font-size: 20px;
+  }
+}
+@media (max-width: 600px) {
+  .lab-grid > .mobile-task-actions {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+  }
+}

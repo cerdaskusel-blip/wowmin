@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Sparkles, ArrowUpRight, Radio, WifiOff } from 'lucide-react';
+import { STAGES, STAGE_INFO } from '@/lib/workshop';
 import { useIdentity } from './provider';
 export function Brand() {
   return (
@@ -153,5 +154,24 @@ export function StickerImage({
       alt={`${sub.nickname}’s sticker${sub.caption ? `: ${sub.caption}` : ''}`}
       loading="lazy"
     />
+  );
+}
+
+export function WorkshopBudget({ session }: { session: import('@/lib/workshop').Workshop }) {
+  const now = useNow();
+  const { offset } = useIdentity();
+  const seconds =
+    Math.ceil(
+      (session.pausedRemainingMs ?? Math.max(0, session.stageEndsAt - now - offset)) / 1000,
+    ) +
+    STAGES.slice(STAGES.indexOf(session.stage) + 1).reduce(
+      (sum, stage) => sum + STAGE_INFO[stage].seconds,
+      0,
+    );
+  return (
+    <span className="workshop-budget">
+      Plan remaining, including celebration: {Math.floor(seconds / 60)}:
+      {String(seconds % 60).padStart(2, '0')}
+    </span>
   );
 }
