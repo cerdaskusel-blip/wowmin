@@ -71,6 +71,7 @@ export function EndSession({ id, title }: { id: string; title: string }) {
                 setBusy(true);
                 setError('');
                 try {
+                  await cleanup(id, 'authorize');
                   await cleanup(id, 'end', true);
                   clearWorkshopDraft(id);
                   window.location.assign(`/session/${id}`);
@@ -103,7 +104,7 @@ export function CleanupStatus({ id }: { id: string }) {
         setState(result.state);
         setError(result.error || '');
         if (result.state === 'complete') {
-          localStorage.removeItem(`wow-cleanup-${id}`);
+          sessionStorage.setItem(`wow-cleanup-complete-${id}`, 'true');
           return;
         }
       } catch (e) {
@@ -118,6 +119,10 @@ export function CleanupStatus({ id }: { id: string }) {
     return () => {
       stopped = true;
       clearTimeout(timer);
+      if (sessionStorage.getItem(`wow-cleanup-complete-${id}`)) {
+        localStorage.removeItem(`wow-cleanup-${id}`);
+        sessionStorage.removeItem(`wow-cleanup-complete-${id}`);
+      }
     };
   }, [id]);
   return (

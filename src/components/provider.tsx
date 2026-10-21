@@ -17,6 +17,16 @@ export function Provider({ children }: { children: ReactNode }) {
     offset: 0,
     error: '',
   });
+  useEffect(() => {
+    try {
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('wow-draft-')) {
+          const draft = JSON.parse(localStorage.getItem(key) || '{}');
+          if (!draft.expiresAt || draft.expiresAt <= Date.now()) localStorage.removeItem(key);
+        }
+      }
+    } catch {}
+  }, []);
   useEffect(
     () =>
       onIdTokenChanged(auth, async (user) => {

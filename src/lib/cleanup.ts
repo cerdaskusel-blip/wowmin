@@ -81,8 +81,15 @@ async function removeIdentity(uid: string, sid: string, lease: string) {
       !user.providerData.length &&
       !user.email &&
       !user.phoneNumber
-    )
+    ) {
       await adminAuth.deleteUser(uid);
+      try {
+        await adminAuth.getUser(uid);
+        throw new Error('Anonymous identity deletion was not verified');
+      } catch (error) {
+        if ((error as { code?: string }).code !== 'auth/user-not-found') throw error;
+      }
+    }
   } catch (error) {
     if ((error as { code?: string }).code !== 'auth/user-not-found') throw error;
   }

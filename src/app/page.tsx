@@ -101,9 +101,9 @@ function Join() {
             placeholder="ABC123"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
-            maxLength={6}
+            maxLength={32}
             minLength={6}
-            pattern="[A-Z2-9]{6}"
+            pattern="[A-Z2-9]{6,32}"
             required
             className="code-input"
           />

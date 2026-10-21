@@ -457,7 +457,7 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
       try {
         localStorage.setItem(
           `wow-draft-${session.id}`,
-          JSON.stringify({ collectionId, caption, style, character }),
+          JSON.stringify({ collectionId, caption, style, character, expiresAt: session.expiresAt }),
         );
       } catch {}
   }, [loaded, session.id, collectionId, caption, style, character]);

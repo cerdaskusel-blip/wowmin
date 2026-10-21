@@ -6,7 +6,7 @@ import { store } from '@/lib/admin';
 export const runtime = 'nodejs';
 const schema = z.object({
   sessionId: z.string(),
-  action: z.enum(['end', 'status', 'retry']),
+  action: z.enum(['authorize', 'end', 'status', 'retry']),
   ticket: z.string().optional(),
   confirmed: z.literal(true).optional(),
 });
@@ -19,9 +19,22 @@ export async function POST(req: NextRequest) {
     sessionRef(data.sessionId);
     // Validate signing configuration before making any destructive change.
     const proof = ticket(data.sessionId, user.uid);
+    if (data.action === 'authorize') {
+      const session = (await sessionRef(data.sessionId).get()).data();
+      if (session?.hostId !== user.uid)
+        throw new ApiError(403, 'Only this workshop’s facilitator can end it.');
+      return NextResponse.json(
+        { state: 'authorized', ticket: proof },
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
     if (data.action === 'end') {
       if (!data.confirmed) throw new ApiError(400, 'Explicit deletion confirmation is required.');
-      await closeSession(data.sessionId, user.uid);
+      if (data.ticket) checkTicket(data.sessionId, user.uid, data.ticket);
+      const exists =
+        (await sessionRef(data.sessionId).get()).exists ||
+        (await store.doc(`cleanupJobs/${data.sessionId}`).get()).exists;
+      if (exists || !data.ticket) await closeSession(data.sessionId, user.uid);
       after(() => cleanSession(data.sessionId));
     } else if (data.ticket) checkTicket(data.sessionId, user.uid, data.ticket);
     else {

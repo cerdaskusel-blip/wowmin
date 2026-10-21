@@ -32,10 +32,10 @@ export function failure(error: unknown) {
     return NextResponse.json({ error: error.message }, { status: error.status });
   if (error instanceof Error && error.name === 'ZodError')
     return NextResponse.json({ error: 'Check the details and try again.' }, { status: 400 });
-  console.error(
-    'Workshop request failed',
-    'Unexpected backend error (details suppressed to protect workshop data)',
-  );
+  const code = (error as { code?: unknown })?.code;
+  console.error('Workshop request failed', typeof code === 'number' ? code : 'unexpected');
+  if (code === 10 || code === 14)
+    return NextResponse.json({ error: 'The workshop is busy. Please retry.' }, { status: 503 });
   return NextResponse.json(
     { error: 'The workshop service is unavailable. Please try again.' },
     { status: 500 },

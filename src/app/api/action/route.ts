@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { randomInt } from 'crypto';
+import { randomInt, randomBytes } from 'crypto';
+import { sequenceCode } from '@/lib/join-code';
 import { store, adminAuth } from '@/lib/admin';
 import { MAX_PARTICIPANTS, retentionMs, assertActive } from '@/lib/lifecycle';
 import {
@@ -33,7 +34,7 @@ const schema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('create'), title: text(70) }),
   z.object({
     action: z.literal('join'),
-    code: z.string().regex(/^[A-Z2-9]{6}$/),
+    code: z.string().regex(/^[A-Z2-9]{6,32}$/),
     nickname: text(24),
   }),
   z.object({ action: z.literal('advance'), sessionId: z.string() }),
@@ -83,12 +84,16 @@ export async function POST(req: NextRequest) {
       if (user.facilitator !== true) throw new ApiError(403, 'Facilitator access is required.');
       const expiresAt = now + retentionMs();
       const ref = store.collection('sessions').doc();
-      const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      const code = Array.from({ length: 6 }, () => alphabet[randomInt(alphabet.length)]).join('');
+      const sequenceRef = store.doc('configuration/joinCodes');
       await store.runTransaction(async (tx) => {
+        const configuration = (await tx.get(sequenceRef)).data();
+        const sequence = BigInt(configuration?.next ?? '0');
+        const key = configuration?.key ?? randomBytes(32).toString('hex');
+        const code = sequenceCode(sequence, key);
         const codeRef = store.doc(`codes/${code}`);
         if ((await tx.get(codeRef)).exists)
           throw new ApiError(409, 'Please try creating the workshop again.');
+        tx.set(sequenceRef, { next: String(sequence + 1n), key });
         tx.create(codeRef, { sessionId: ref.id, expiresAt: expiresAt });
         tx.create(ref, {
           id: ref.id,
