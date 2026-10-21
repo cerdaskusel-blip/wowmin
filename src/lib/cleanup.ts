@@ -75,13 +75,9 @@ async function removeIdentity(uid: string, sid: string, lease: string) {
   if (!removeAuth) return;
   try {
     const user = await adminAuth.getUser(uid);
-    // Never delete facilitator or linked/non-anonymous accounts.
-    if (
-      !user.customClaims?.facilitator &&
-      !user.providerData.length &&
-      !user.email &&
-      !user.phoneNumber
-    ) {
+    // Admission permits only anonymous identities. Linking a provider later
+    // must not let a temporary participant evade deletion. Preserve facilitators.
+    if (!user.customClaims?.facilitator) {
       await adminAuth.deleteUser(uid);
       try {
         await adminAuth.getUser(uid);

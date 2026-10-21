@@ -320,6 +320,10 @@ console.log('PASS joins/votes racing termination; no subsequent mutations or ima
 const authFailure = await create('Auth deletion failure');
 const retained = await guest();
 await ok(await action(retained.idToken, 'join', { code: authFailure.code, nickname: 'Temporary' }));
+// A participant cannot escape deletion by attaching email after admission.
+await adminAuth.updateUser(retained.localId, {
+  email: `temporary-${retained.localId}@example.test`,
+});
 await closeSession(authFailure.id, host.localId);
 const originalDeleteUser = adminAuth.deleteUser.bind(adminAuth);
 adminAuth.deleteUser = async () => {

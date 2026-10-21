@@ -26,8 +26,13 @@ async function join(p: Page, code: string, name: string) {
   await expect(p.getByText('YOU’RE IN. LET’S GET CREATIVE.')).toBeVisible();
 }
 async function next(h: Page, name: string, confirm = false) {
+  const committed = h.waitForResponse(
+    (r) => r.url().endsWith('/api/action') && r.request().postDataJSON()?.action === 'advance',
+  );
   await h.getByRole('button', { name, exact: true }).click();
   if (confirm) await h.getByRole('button', { name: 'Confirm stage change' }).click();
+  expect((await committed).ok()).toBeTruthy();
+  if (confirm) await expect(h.getByRole('dialog')).not.toBeVisible();
 }
 async function reopen(h: Page) {
   await h.getByText('Manual stage controls / reopen submissions', { exact: true }).click();
