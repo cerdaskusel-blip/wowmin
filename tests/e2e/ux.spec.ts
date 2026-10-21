@@ -194,7 +194,7 @@ test('submission recovery, pause, expiry, reopening and saved membership', async
   await host.getByLabel(/^Show/).selectOption('rejected');
   await host.getByRole('button', { name: 'Restore to wall' }).click();
   await expect(p.getByText('You’re in the showcase!')).toBeVisible();
-  await p.getByRole('link', { name: 'WOW home' }).click();
+  await p.getByRole('link', { name: 'WOW The Creative Teacher Workshop home' }).click();
   await expect(p.getByRole('link', { name: /Resume workshop/ })).toBeVisible();
   await capture(p, 'resume-mobile');
   await p.getByRole('link', { name: /Resume workshop/ }).click();

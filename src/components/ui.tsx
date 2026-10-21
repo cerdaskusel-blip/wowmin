@@ -6,9 +6,12 @@ import { STAGES, STAGE_INFO } from '@/lib/workshop';
 import { useIdentity } from './provider';
 export function Brand() {
   return (
-    <Link href="/" className="brand" aria-label="WOW home">
+    <Link href="/" className="brand" aria-label="WOW The Creative Teacher Workshop home">
       <span className="brand-mark">
-        w<span>o</span>w<span className="brand-dot">✳</span>
+        w<span>o</span>w
+        <span className="brand-dot" aria-hidden="true">
+          ✳
+        </span>
       </span>
       <span className="brand-tag">
         THE CREATIVE
