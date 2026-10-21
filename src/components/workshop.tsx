@@ -19,6 +19,7 @@ import {
   Flag,
   Trophy,
 } from 'lucide-react';
+import { CleanupStatus, clearWorkshopDraft } from './cleanup';
 import { auth, db, api } from '@/lib/firebase';
 import {
   COLLECTIONS,
@@ -46,7 +47,9 @@ import { UploadPanel } from './upload';
 import { Gallery } from './wall';
 import { HostControls, ReviewDesk, ProgressList } from './host-controls';
 export function WorkshopView({ id, projector = false }: { id: string; projector?: boolean }) {
-  const { user, ready, error: authError } = useIdentity();
+  const { user, ready, facilitator, error: authError } = useIdentity();
+  const now = useNow();
+  const [closed, setClosed] = useState(false);
   const [session, setSession] = useState<Workshop | null>(null);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -54,14 +57,41 @@ export function WorkshopView({ id, projector = false }: { id: string; projector?
     return onSnapshot(
       doc(db, 'sessions', id),
       (s) => {
-        if (!s.exists()) setError('This workshop could not be found.');
-        else setSession(s.data() as Workshop);
+        if (!s.exists()) {
+          setClosed(true);
+          clearWorkshopDraft(id);
+        } else setSession(s.data() as Workshop);
       },
-      () =>
-        setError('This workshop is unavailable. Join with its code or sign in as its facilitator.'),
+      (e) => {
+        if (e.code === 'permission-denied') {
+          setClosed(true);
+          clearWorkshopDraft(id);
+        } else setError('Could not connect. Check your connection and retry.');
+      },
     );
   }, [user, id]);
+  useEffect(() => {
+    if (session && (session.lifecycle === 'closing' || session.expiresAt <= now)) {
+      setClosed(true);
+      clearWorkshopDraft(id);
+    }
+  }, [session, now, id]);
   if (!ready) return <Loading />;
+  if (closed)
+    return facilitator ? (
+      <CleanupStatus id={id} />
+    ) : (
+      <main className="center-message">
+        <h1>This workshop has ended</h1>
+        <p>
+          Its temporary data is being deleted. Ask your facilitator for the next workshop’s new
+          code.
+        </p>
+        <Link className="button primary" href="/">
+          Join another workshop
+        </Link>
+      </main>
+    );
   if (error || authError)
     return (
       <main className="center-message">

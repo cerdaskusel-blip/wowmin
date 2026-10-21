@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Member, Submission, Workshop, STAGE_INFO, STAGES, Stage, nextStage } from '@/lib/workshop';
+import { EndSession } from './cleanup';
 import { Modal } from './modal';
 import { StickerImage, ErrorMessage, WorkshopBudget } from './ui';
 type Act = (action: string, data?: Record<string, unknown>) => Promise<boolean>;
@@ -49,7 +50,7 @@ export function HostControls({
       <div className="host-controls">
         <div className="live-totals" aria-label="Live workshop totals">
           <span>
-            <b>{session.participantCount}</b> / 75 joined
+            <b>{session.participantCount}</b> / 60 joined
           </span>
           <span>
             <b>{submitted}</b> submitted
@@ -66,6 +67,7 @@ export function HostControls({
         </div>
         <WorkshopBudget session={session} />
         <div className="host-actions">
+          <EndSession id={session.id} title={session.title} />
           <Link
             href={`/projector/${session.id}`}
             target="_blank"

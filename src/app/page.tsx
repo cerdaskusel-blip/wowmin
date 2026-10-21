@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signInAnonymously } from 'firebase/auth';
+import { signInAnonymously, signOut } from 'firebase/auth';
 import {
   ArrowRight,
   ArrowDownRight,
@@ -36,7 +36,10 @@ function Join() {
             if (active && s.exists() && s.data().expiresAt > Date.now())
               setResume({ id, title: s.data().title });
           })
-          .catch(() => {});
+          .catch(() => {
+            localStorage.removeItem(`wow-draft-${id}`);
+            localStorage.removeItem('wow-last-session');
+          });
     } catch {}
     return () => {
       active = false;
@@ -54,6 +57,13 @@ function Join() {
     setBusy(true);
     setError('');
     try {
+      if (auth.currentUser?.isAnonymous) {
+        try {
+          await auth.currentUser.reload();
+        } catch {
+          await signOut(auth);
+        }
+      }
       if (!auth.currentUser) await signInAnonymously(auth);
       const data = await api('join', { code: code.toUpperCase().replace(/\s/g, ''), nickname });
       try {

@@ -124,6 +124,7 @@ export type Workshop = {
   createdAt: number;
   expiresAt: number;
   participantCount: number;
+  lifecycle?: 'active' | 'closing';
   winners?: { id: string; nickname: string; votes: number; rank: number }[];
   totalVotes?: number;
 };
