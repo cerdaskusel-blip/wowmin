@@ -32,7 +32,19 @@ import {
   nextStage,
 } from '@/lib/workshop';
 import { useIdentity } from './provider';
-import { Brand, Timer, Connection, ErrorMessage, Loading, StickerArt } from './ui';
+import {
+  Brand,
+  Timer,
+  Connection,
+  ErrorMessage,
+  Loading,
+  StickerArt,
+  StickerImage,
+  useNow,
+} from './ui';
+import { UploadPanel } from './upload';
+import { Gallery } from './wall';
+import { HostControls, ReviewDesk, ProgressList } from './host-controls';
 export function WorkshopView({ id, projector = false }: { id: string; projector?: boolean }) {
   const { user, ready, error: authError } = useIdentity();
   const [session, setSession] = useState<Workshop | null>(null);
@@ -90,6 +102,8 @@ function Room({
 }) {
   const { user } = useIdentity();
   const [attendanceCount, setAttendanceCount] = useState(0);
+  const [votesCast, setVotesCast] = useState(0);
+  const [submittedCount, setSubmittedCount] = useState(0);
   const session = { ...storedSession, participantCount: attendanceCount };
   const [members, setMembers] = useState<Member[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -102,7 +116,11 @@ function Room({
     () =>
       onSnapshot(
         collection(db, 'sessions', session.id, 'attendance'),
-        (snapshot) => setAttendanceCount(snapshot.size),
+        (snapshot) => {
+          setAttendanceCount(snapshot.size);
+          setVotesCast(snapshot.docs.filter((d) => d.data().voted).length);
+          setSubmittedCount(snapshot.docs.filter((d) => d.data().submitted).length);
+        },
         () => setError('Attendance could not be loaded. Please refresh.'),
       ),
     [session.id],
@@ -152,15 +170,28 @@ function Room({
     setError('');
     try {
       await api(action, { sessionId: session.id, ...data });
+      return true;
     } catch (e) {
       setError((e as Error).message);
+      return false;
     } finally {
       setBusy(false);
     }
   }
   const approved = submissions.filter((s) => s.status === 'approved');
   const pending = submissions.filter((s) => s.status === 'pending');
-  if (projector) return <Projector session={session} approved={approved} joinUrl={joinUrl} />;
+  useEffect(() => {
+    const item = document.querySelector<HTMLElement>('.stage-strip [aria-current=step]');
+    if (item?.parentElement)
+      item.parentElement.scrollLeft = Math.max(
+        0,
+        item.offsetLeft - item.parentElement.clientWidth / 2,
+      );
+  }, [session.stage]);
+  if (projector)
+    return (
+      <Projector session={session} approved={approved} joinUrl={joinUrl} votesCast={votesCast} />
+    );
   return (
     <>
       <header className="header room-header">
@@ -173,10 +204,11 @@ function Room({
           ROOM <b>{session.code}</b>
         </span>
       </header>
-      <div className="stage-strip">
+      <div className="stage-strip" tabIndex={0} aria-label="Workshop stages">
         {STAGES.map((stage, i) => (
           <span
             key={stage}
+            aria-current={session.stage === stage ? 'step' : undefined}
             className={
               session.stage === stage ? 'active' : STAGES.indexOf(session.stage) > i ? 'done' : ''
             }
@@ -203,112 +235,44 @@ function Room({
               <small>
                 <Clock size={12} /> TIME FOR THIS STAGE
               </small>
-              <Timer end={session.stageEndsAt} />
+              <Timer end={session.stageEndsAt} pausedRemainingMs={session.pausedRemainingMs} />
             </div>
           )}
         </div>
+        <div className="live-stage-bar">
+          <span>
+            {session.pausedRemainingMs != null ? 'Paused · ' : ''}
+            {STAGE_INFO[session.stage].title}
+          </span>
+          <Timer end={session.stageEndsAt} pausedRemainingMs={session.pausedRemainingMs} />
+          <Connection />
+        </div>
+        {session.pausedRemainingMs != null && (
+          <p className="notice" role="status">
+            Workshop paused. Uploads and voting will resume when your facilitator restarts the
+            clock.
+          </p>
+        )}
         <ErrorMessage message={error} />
         {host ? (
           <>
-            <div className="host-controls">
-              <span>
-                <Users size={18} />
-                <b>{session.participantCount}</b> / 75 joined
-              </span>
-              <span>
-                <ImagePlus size={18} />
-                <b>{approved.length}</b> approved
-              </span>
-              <span>
-                <Flag size={18} />
-                <b>{pending.length}</b> to review
-              </span>
-              <div className="spacer" />
-              <Link
-                href={`/projector/${session.id}`}
-                target="_blank"
-                className="button secondary small"
-              >
-                <Monitor size={16} /> Projector
-              </Link>
-              {session.stage !== 'results' && (
-                <>
-                  <button
-                    disabled={busy}
-                    className="button secondary small"
-                    onClick={() => act('extend')}
-                  >
-                    <Plus size={15} /> 1 min
-                  </button>
-                  <button
-                    disabled={busy}
-                    className="button primary small"
-                    onClick={() => act('advance')}
-                  >
-                    {session.stage === 'vote'
-                      ? 'Close voting & reveal'
-                      : nextStage(session.stage) === 'vote'
-                        ? 'Open voting'
-                        : `Next: ${STAGE_INFO[nextStage(session.stage)!].title}`}
-                    <ArrowRight size={15} />
-                  </button>
-                </>
-              )}
-            </div>
+            <HostControls
+              session={session}
+              submitted={submittedCount}
+              approved={approved.length}
+              pending={pending.length}
+              votes={votesCast}
+              busy={busy}
+              act={act}
+              actionError={error}
+            />
             <div className="host-grid">
               <section className="host-content">
                 {session.stage === 'results' ? (
                   <Results session={session} />
                 ) : (
                   <>
-                    <div className="section-label">
-                      <h2>
-                        Review desk <span className="count-badge">{pending.length}</span>
-                      </h2>
-                      <span>Only approved stickers appear in the gallery</span>
-                    </div>
-                    {pending.length ? (
-                      <div className="moderation-grid">
-                        {pending.map((sub) => (
-                          <div className="moderation-card" key={sub.id}>
-                            <StickerImage sessionId={session.id} sub={sub} />
-                            <h3>{sub.nickname}</h3>
-                            <p>{sub.caption || 'An original teacher creation'}</p>
-                            <div className="two-buttons">
-                              <button
-                                disabled={busy || ['vote', 'results'].includes(session.stage)}
-                                className="button approve small"
-                                onClick={() =>
-                                  act('moderate', { submissionId: sub.id, status: 'approved' })
-                                }
-                              >
-                                <Check size={16} /> Approve
-                              </button>
-                              <button
-                                disabled={busy || ['vote', 'results'].includes(session.stage)}
-                                className="button secondary small"
-                                onClick={() =>
-                                  act('moderate', { submissionId: sub.id, status: 'rejected' })
-                                }
-                              >
-                                <X size={16} /> Return
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <Empty
-                        icon="✦"
-                        title="Ready for the first little masterpiece."
-                        text="Submitted stickers appear here for your review. Keep them classroom-friendly, with no personal or student information."
-                      />
-                    )}
-                    <div className="section-label">
-                      <h2>
-                        The live gallery <span className="count-badge">{approved.length}</span>
-                      </h2>
-                    </div>
+                    <ReviewDesk submissions={submissions} session={session} busy={busy} act={act} />
                     <Gallery
                       submissions={approved}
                       session={session}
@@ -323,80 +287,61 @@ function Room({
               </section>
               <aside className="host-sidebar">
                 <JoinPanel session={session} url={joinUrl} />
-                <section className="panel progress-panel">
-                  <h3>The room at a glance</h3>
-                  <p>Progress updates live as teachers create.</p>
-                  {members.length === 0 ? (
-                    <p className="fine-print">Your first teacher is one scan away.</p>
-                  ) : (
-                    members.map((m) => (
-                      <div className="member-row" key={m.id}>
-                        <span className="avatar">{m.nickname[0].toUpperCase()}</span>
-                        <span>{m.nickname}</span>
-                        <small>
-                          {(
-                            {
-                              joined: 'In the room',
-                              'prompt-ready': 'Prompt ready',
-                              generating: 'Creating',
-                              submitted: 'Submitted',
-                              voted: 'Voted ✓',
-                            } as Record<string, string>
-                          )[m.progress] || m.progress}
-                        </small>
-                      </div>
-                    ))
-                  )}
-                </section>
+                <ProgressList members={members} />
               </aside>
             </div>
           </>
-        ) : session.stage === 'results' ? (
-          <Results session={session} />
-        ) : session.stage === 'lobby' ? (
-          <div className="welcome-panel">
-            <div>
-              <span className="pill">YOU’RE IN. LET’S GET CREATIVE.</span>
-              <h2>
-                A sticker only
-                <br />
-                <em>you could imagine.</em>
-              </h2>
-              <p>
-                Your facilitator will kick things off shortly. You’ll choose a caption, create with
-                your own AI account, and share your finished sticker with the room.
-              </p>
-              <div className="notice">
-                Have ChatGPT, Gemini, or your preferred image tool ready. No selfies needed—use an
-                original fictional character.
-              </div>
-              <Connection />
-            </div>
-            <StickerArt kind="sun" />
-          </div>
-        ) : ['prompt', 'generate', 'submit'].includes(session.stage) ? (
-          <PromptLab session={session} own={own} />
         ) : (
-          <>
-            <div className="gallery-banner">
-              <Heart size={20} />
-              <p>
-                {session.stage === 'vote'
-                  ? vote
-                    ? 'Your vote is in. Thanks for cheering on another creator!'
-                    : 'Choose one favorite. Votes are final, so pick the sticker that makes you smile.'
-                  : 'Every sticker started as a little idea. Take a look around while your facilitator prepares voting.'}
-              </p>
+          <div className={`participant-experience stage-${session.stage}`}>
+            {session.stage === 'lobby' && (
+              <div className="welcome-panel">
+                <div>
+                  <span className="pill">YOU’RE IN. LET’S GET CREATIVE.</span>
+                  <h2>
+                    A sticker only
+                    <br />
+                    <em>you could imagine.</em>
+                  </h2>
+                  <p>
+                    Your facilitator will kick things off shortly. You’ll choose a caption, create
+                    with your own AI account, and share your finished sticker with the room.
+                  </p>
+                  <div className="notice">
+                    Have ChatGPT, Gemini, or your preferred image tool ready. No selfies needed—use
+                    an original fictional character.
+                  </div>
+                  <Connection />
+                </div>
+                <StickerArt kind="sun" />
+              </div>
+            )}
+            <div
+              className="participant-lab"
+              hidden={!['prompt', 'generate', 'submit'].includes(session.stage)}
+            >
+              <PromptLab session={session} own={own} />
             </div>
-            <Gallery
-              submissions={approved}
-              session={session}
-              host={false}
-              vote={vote}
-              onVote={(id) => act('vote', { submissionId: id })}
-              busy={busy}
-            />
-          </>
+            <UploadPanel session={session} own={own} />
+            {['gallery', 'vote'].includes(session.stage) && (
+              <>
+                <div className="gallery-banner" role="status">
+                  {session.stage === 'vote'
+                    ? vote
+                      ? 'Your vote is in. Thanks for cheering on another creator!'
+                      : 'One final vote. Enlarge a sticker to inspect it, then choose your favorite.'
+                    : 'Explore the Live Sticker Wall. Voting opens when your facilitator is ready.'}
+                </div>
+                <Gallery
+                  submissions={approved}
+                  session={session}
+                  vote={vote}
+                  onVote={(id) => act('vote', { submissionId: id })}
+                  busy={busy}
+                />
+              </>
+            )}
+            {session.stage === 'results' && <Results session={session} />}
+          </div>
         )}
       </main>
       <div className="room-footer">
@@ -423,7 +368,13 @@ function JoinPanel({ session, url }: { session: Workshop; url: string }) {
       <h3>Scan. Join. Create.</h3>
       {url && (
         <div className="qr">
-          <QRCodeSVG value={url} size={160} level="M" marginSize={1} />
+          <QRCodeSVG
+            value={url}
+            size={160}
+            level="M"
+            marginSize={1}
+            title={`Join workshop ${session.code}`}
+          />
         </div>
       )}
       <p>Or enter the session code</p>
@@ -452,10 +403,7 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
   const [character, setCharacter] = useState('A cheerful teacher mascot');
   const [loaded, setLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const { offset } = useIdentity();
+  const [copyError, setCopyError] = useState('');
   useEffect(() => {
     try {
       const saved = localStorage.getItem(`wow-draft-${session.id}`);
@@ -471,51 +419,43 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
   }, [session.id]);
   useEffect(() => {
     if (loaded)
-      localStorage.setItem(
-        `wow-draft-${session.id}`,
-        JSON.stringify({ collectionId, caption, style, character }),
-      );
+      try {
+        localStorage.setItem(
+          `wow-draft-${session.id}`,
+          JSON.stringify({ collectionId, caption, style, character }),
+        );
+      } catch {}
   }, [loaded, session.id, collectionId, caption, style, character]);
   const prompt = makePrompt(caption, style, character);
   const selected = COLLECTIONS.find((c) => c.id === collectionId)!;
   async function copy() {
-    setError('');
+    setCopyError('');
     try {
       await navigator.clipboard.writeText(prompt);
       setCopied(true);
-      await api('progress', { sessionId: session.id, progress: 'prompt-ready' });
+      api('progress', { sessionId: session.id, progress: 'prompt-ready' }).catch(() => {});
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      setError('Could not copy automatically. Select and copy the prompt below.');
-    }
-  }
-  async function upload(e: React.FormEvent) {
-    e.preventDefault();
-    if (!file) return;
-    setBusy(true);
-    setError('');
-    try {
-      const form = new FormData();
-      form.set('sessionId', session.id);
-      form.set('caption', caption);
-      form.set('image', file);
-      const token = await auth.currentUser!.getIdToken();
-      const r = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      setFile(null);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
+      setCopyError(
+        'Could not copy automatically. Use Select prompt below, then your device’s Copy command.',
+      );
     }
   }
   return (
     <div className="lab-grid">
+      <div className="mobile-task-actions">
+        <button className="button primary" disabled={!caption.trim()} onClick={copy}>
+          {copied ? 'Copied. Open your AI tool' : 'Copy prompt'}
+        </button>
+        <a
+          className="button secondary"
+          href={session.stage === 'prompt' ? '#ai-tools' : '#upload-sticker'}
+        >
+          {session.stage === 'prompt' ? 'Open AI tool' : 'Upload sticker'}
+        </a>
+        <span role="status">{copied ? 'Prompt copied to clipboard.' : ''}</span>
+        {copyError && <a href="#copy-help">Copy needs your help — select prompt</a>}
+      </div>
       <div>
         <section className="panel lab-panel">
           <div className="section-label">
@@ -528,6 +468,7 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
             {COLLECTIONS.map((c) => (
               <button
                 key={c.id}
+                aria-pressed={c.id === collectionId}
                 className={c.id === collectionId ? 'selected' : ''}
                 onClick={() => {
                   setCollection(c.id);
@@ -543,6 +484,7 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
           <div className="caption-options">
             {selected.captions.map((c) => (
               <button
+                aria-pressed={c === caption}
                 className={c === caption ? 'selected' : ''}
                 onClick={() => setCaption(c)}
                 key={c}
@@ -568,6 +510,7 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
           <div className="style-options">
             {STYLES.map((s) => (
               <button
+                aria-pressed={style === s.id}
                 className={style === s.id ? 'selected' : ''}
                 onClick={() => setStyle(s.id)}
                 key={s.id}
@@ -617,8 +560,34 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
             <Copy size={17} />
             {copied ? 'Copied. Go make your WOW!' : 'Copy my prompt'}
           </button>
-          <div className="external-tools">
-            <small>PASTE IT INTO YOUR OWN AI TOOL</small>
+          <div id="copy-help">
+            <ErrorMessage message={copyError} />
+            {copyError && (
+              <button
+                className="button secondary"
+                onClick={() => {
+                  const input = document.getElementById('generated-prompt') as HTMLTextAreaElement;
+                  input.focus();
+                  input.select();
+                }}
+              >
+                Select prompt
+              </button>
+            )}
+          </div>
+          <p className="sr-only" role="status">
+            {copied ? 'Prompt copied to clipboard.' : ''}
+          </p>
+          <div className="external-tools" id="ai-tools">
+            <h3>Your next three steps</h3>
+            <ol>
+              <li>Open a tool below and sign in to your own account.</li>
+              <li>Paste your copied prompt and ask it to create the image.</li>
+              <li>
+                Download/save the finished image. Return to this workshop tab and choose Upload
+                sticker.
+              </li>
+            </ol>
             <div>
               {[
                 ['ChatGPT', 'https://chatgpt.com'],
@@ -642,207 +611,26 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
               ))}
             </div>
             <p>
-              Your AI account creates the image. Save the finished sticker and return to this tab.
+              On a phone, use the AI tool’s Download or Save image option, then choose the saved
+              image from Photos or Files here. If your account cannot create images, ask your
+              facilitator for help or an example to customize. Keep this workshop tab open; your
+              caption and style are saved.
             </p>
           </div>
-        </section>
-        <section className="panel upload-panel">
-          <h2>
-            <span className="number">03</span> Bring it back
-          </h2>
-          {own ? (
-            <div className={`submission-status ${own.status}`}>
-              <StickerImage sessionId={session.id} sub={own} />
-              <b>
-                {own.status === 'approved'
-                  ? 'You’re in the showcase!'
-                  : own.status === 'pending'
-                    ? 'Sent! Your facilitator is taking a look.'
-                    : 'Let’s give it another try.'}
-              </b>
-              <p>
-                {own.status === 'rejected'
-                  ? own.reason
-                  : 'Your finished sticker is safely in the workshop.'}
-              </p>
-            </div>
-          ) : null}
-          {own?.status !== 'approved' && (
-            <form onSubmit={upload}>
-              <label className="upload-zone">
-                <ImagePlus size={28} />
-                <b>{file ? file.name : 'Choose your finished sticker'}</b>
-                <span>PNG, JPG or WebP · up to 5 MB</span>
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  aria-label="Finished sticker image"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    setError('');
-                    if (f && f.size > 5 * 1024 * 1024) {
-                      setError('Choose an image under 5 MB.');
-                      setFile(null);
-                    } else setFile(f ?? null);
-                  }}
-                />
-              </label>
-              <p className="fine-print">
-                Upload only your finished sticker, never an original selfie or a photo of a student.
-              </p>
-              <button
-                disabled={
-                  !file ||
-                  busy ||
-                  !['generate', 'submit'].includes(session.stage) ||
-                  session.stageEndsAt <= Date.now() + offset
-                }
-                className="button dark full"
-              >
-                {busy
-                  ? 'Sending your sticker…'
-                  : own
-                    ? 'Replace my submission'
-                    : 'Send to the showcase'}
-                <ArrowRight size={17} />
-              </button>
-              {session.stage === 'prompt' && (
-                <p className="fine-print">
-                  Uploads open when your facilitator starts the Create stage.
-                </p>
-              )}
-            </form>
-          )}
-          <ErrorMessage message={error} />
         </section>
       </aside>
     </div>
   );
 }
-function StickerImage({ sessionId, sub }: { sessionId: string; sub: Submission }) {
-  return (
-    <img
-      className="submission-image"
-      src={`/api/image?sessionId=${sessionId}&submissionId=${sub.id}&v=${sub.createdAt}`}
-      alt={`${sub.nickname}’s sticker${sub.caption ? `: ${sub.caption}` : ''}`}
-      loading="lazy"
-    />
-  );
-}
-function Gallery({
-  submissions,
-  session,
-  host,
-  vote,
-  onVote,
-  busy,
-  onRemove,
-}: {
-  submissions: Submission[];
-  session: Workshop;
-  host: boolean;
-  vote: string | null;
-  onVote: (id: string) => void;
-  busy: boolean;
-  onRemove?: (id: string) => void;
-}) {
-  const { user, offset } = useIdentity();
-  const [selected, setSelected] = useState<string | null>(null);
-  const [now, setNow] = useState(Date.now());
+function Results({ session, projector = false }: { session: Workshop; projector?: boolean }) {
+  const [page, setPage] = useState(0);
+  const pages = Math.max(1, Math.ceil((session.winners?.length || 0) / 3));
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  if (!submissions.length)
-    return (
-      <Empty
-        icon="♡"
-        title="A gallery full of possibility."
-        text="Approved stickers will appear here live. There’s a little WOW on its way."
-      />
-    );
-  return (
-    <>
-      <div className="gallery-grid">
-        {submissions.map((s) => (
-          <article className="gallery-card" key={s.id}>
-            <div className="gallery-art">
-              <StickerImage sessionId={session.id} sub={s} />
-              {vote === s.id && (
-                <span className="voted-badge">
-                  <Heart size={14} fill="currentColor" /> YOUR PICK
-                </span>
-              )}
-            </div>
-            <div className="gallery-card-bottom">
-              <span className="avatar">{s.nickname[0].toUpperCase()}</span>
-              <div>
-                <h3>
-                  {s.nickname}
-                  {s.id === user?.uid ? ' (you)' : ''}
-                </h3>
-                <p>{s.caption || 'A little original WOW'}</p>
-              </div>
-            </div>
-            {session.stage === 'vote' && !host && (
-              <button
-                className={`button ${vote === s.id ? 'approve' : 'secondary'} full`}
-                disabled={
-                  !!vote || busy || s.id === user?.uid || session.stageEndsAt <= now + offset
-                }
-                onClick={() => setSelected(s.id)}
-              >
-                <Heart size={16} />
-                {vote === s.id
-                  ? 'Your vote is counted'
-                  : s.id === user?.uid
-                    ? 'Your creation'
-                    : vote
-                      ? 'Voting complete'
-                      : 'This is my favorite'}
-              </button>
-            )}
-            {host && !['vote', 'results'].includes(session.stage) && (
-              <button className="text-button" disabled={busy} onClick={() => onRemove?.(s.id)}>
-                Return to creator
-              </button>
-            )}
-          </article>
-        ))}
-      </div>
-      {selected && (
-        <div className="modal-backdrop">
-          <div
-            className="panel vote-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="vote-title"
-          >
-            <Heart size={32} />
-            <h2 id="vote-title">Give this WOW your vote?</h2>
-            <p>You get one vote, and it’s final. Make it count.</p>
-            <div className="two-buttons">
-              <button autoFocus className="button secondary" onClick={() => setSelected(null)}>
-                Keep looking
-              </button>
-              <button
-                className="button primary"
-                disabled={busy}
-                onClick={() => {
-                  onVote(selected);
-                  setSelected(null);
-                }}
-              >
-                Cast my vote
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-function Results({ session }: { session: Workshop }) {
+    if (!projector || pages <= 1) return;
+    const timer = setInterval(() => setPage((p) => (p + 1) % pages), 8000);
+    return () => clearInterval(timer);
+  }, [projector, pages]);
+  const winners = projector ? session.winners?.slice(page * 3, page * 3 + 3) : session.winners;
   return (
     <section className="results">
       <div className="confetti" aria-hidden="true">
@@ -872,7 +660,7 @@ function Results({ session }: { session: Workshop }) {
       </p>
       {session.winners?.length ? (
         <div className="podium">
-          {session.winners.map((w) => (
+          {winners?.map((w) => (
             <article key={w.id} className={`winner rank-${w.rank}`}>
               <div className="winner-rank">
                 {w.rank === 1 ? '★' : w.rank}{' '}
@@ -901,6 +689,22 @@ function Results({ session }: { session: Workshop }) {
           <p>No votes were cast this time. Celebrate all the ideas you made together!</p>
         </div>
       )}
+      {projector && pages > 1 && (
+        <div className="winner-pages" aria-label="Tied winner pages">
+          <button
+            className="button secondary"
+            onClick={() => setPage((p) => (p - 1 + pages) % pages)}
+          >
+            Previous winners
+          </button>
+          <span>
+            Including all ties · {page + 1} / {pages} · changes every 8 seconds
+          </span>
+          <button className="button secondary" onClick={() => setPage((p) => (p + 1) % pages)}>
+            Next winners
+          </button>
+        </div>
+      )}
       <div className="results-note">
         Take this creativity back to your classroom. <Heart size={17} />
       </div>
@@ -911,18 +715,15 @@ function Projector({
   session,
   approved,
   joinUrl,
+  votesCast,
 }: {
   session: Workshop;
   approved: Submission[];
   joinUrl: string;
+  votesCast: number;
 }) {
-  const [index, setIndex] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setIndex((i) => i + 1), 6000);
-    return () => clearInterval(t);
-  }, []);
   return (
-    <main className="projector">
+    <main className={`projector ${approved.length ? 'has-wall' : ''}`}>
       <header>
         <Brand />
         <Connection />
@@ -931,7 +732,7 @@ function Projector({
         </span>
       </header>
       {session.stage === 'results' ? (
-        <Results session={session} />
+        <Results session={session} projector />
       ) : (
         <>
           <div className="projector-heading">
@@ -943,19 +744,19 @@ function Projector({
               </h1>
               <p>{STAGE_INFO[session.stage].hint}</p>
             </div>
-            <Timer end={session.stageEndsAt} large />
+            <div>
+              {session.pausedRemainingMs != null && <strong>PAUSED</strong>}
+              <Timer
+                end={session.stageEndsAt}
+                pausedRemainingMs={session.pausedRemainingMs}
+                large
+              />
+            </div>
           </div>
           <div className="projector-body">
             <div className="projector-showcase">
               {approved.length ? (
-                <div className="projected-sticker" key={approved[index % approved.length].id}>
-                  <StickerImage sessionId={session.id} sub={approved[index % approved.length]} />
-                  <h2>{approved[index % approved.length].nickname}</h2>
-                  <p>{approved[index % approved.length].caption}</p>
-                  <span>
-                    {(index % approved.length) + 1} / {approved.length} creative WOWs
-                  </span>
-                </div>
+                <Gallery submissions={approved} session={session} host projector />
               ) : (
                 <>
                   <StickerArt kind="sun" />
@@ -971,7 +772,10 @@ function Projector({
             <JoinPanel session={session} url={joinUrl} />
           </div>
           <footer>
-            <span>{session.participantCount} CREATIVE MINDS IN THE ROOM</span>
+            <span>
+              {session.participantCount} JOINED · {approved.length} APPROVED · {votesCast} VOTES
+              CAST
+            </span>
             <span>
               {session.stage === 'vote'
                 ? 'ONE PERSON. ONE VOTE. SHARE THE LOVE.'
