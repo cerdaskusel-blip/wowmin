@@ -217,6 +217,20 @@ assert.equal(
   403,
 );
 await Promise.all(Array.from({ length: 4 }, () => closeSession(left.id, host.localId)));
+const ownerJobs = await ok(
+  await fetch(`${origin}/api/cleanup`, { headers: headers(host.idToken) }),
+);
+assert.ok(ownerJobs.jobs.some((j: { id: string }) => j.id === left.id));
+const unrelatedJobs = await ok(
+  await fetch(`${origin}/api/cleanup`, { headers: headers(otherToken.idToken) }),
+);
+assert.ok(!unrelatedJobs.jobs.some((j: { id: string }) => j.id === left.id));
+assert.equal(
+  (await fetch(`${origin}/api/cleanup`, { headers: headers(shared.idToken) })).status,
+  403,
+);
+assert.equal((await fetch(`${origin}/api/cleanup`)).status, 401);
+
 await Promise.all(Array.from({ length: 4 }, () => cleanSession(left.id)));
 await verifyDeleted(left.id);
 await adminAuth.getUser(shared.localId);
