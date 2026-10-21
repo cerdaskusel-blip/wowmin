@@ -1,0 +1,9 @@
+# Copy to deploy/runtime.local.yaml and substitute the registered bucket.
+# No emulator variables or GOOGLE_APPLICATION_CREDENTIALS belong in production.
+FIREBASE_PROJECT_ID: 'wowmin-workshop'
+FIREBASE_STORAGE_BUCKET: 'REPLACE_WITH_REGISTERED_BUCKET'
+NEXT_PUBLIC_USE_EMULATORS: 'false'
+NEXT_PUBLIC_APP_URL: 'https://wowmin-workshop.web.app'
+WORKSHOP_RETENTION_HOURS: '4'
+# Keep false until actual Storage, Firestore backups and logging are reviewed.
+WORKSHOP_PRIVACY_REVIEWED: 'false'

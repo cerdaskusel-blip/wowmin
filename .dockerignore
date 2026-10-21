@@ -1,0 +1,13 @@
+# Only application build inputs enter the context. No local credentials or caches.
+**
+!package.json
+!package-lock.json
+!next.config.ts
+!next-env.d.ts
+!tsconfig.json
+!src/
+!src/**
+!scripts/
+!scripts/cleanup-once.ts
+!Dockerfile
+!.dockerignore

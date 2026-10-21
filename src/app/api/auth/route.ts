@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
     requireOrigin(req);
     await identity(req);
     const response = NextResponse.json({ serverNow: Date.now() });
-    response.cookies.set('wow-token', req.headers.get('authorization')!.slice(7), {
+    response.cookies.set('__session', req.headers.get('authorization')!.slice(7), {
       httpOnly: true,
       secure: req.nextUrl.protocol === 'https:',
       sameSite: 'strict',
@@ -22,7 +22,7 @@ export async function DELETE(req: NextRequest) {
   try {
     requireOrigin(req);
     const response = NextResponse.json({ ok: true });
-    response.cookies.set('wow-token', '', {
+    response.cookies.set('__session', '', {
       httpOnly: true,
       secure: req.nextUrl.protocol === 'https:',
       sameSite: 'strict',

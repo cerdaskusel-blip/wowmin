@@ -102,6 +102,18 @@ test('authorization, protected uploads, moderation locks and atomic voting', asy
   expect((await upload(a.idToken, Buffer.from('<svg></svg>'), 'image/svg+xml')).status()).toBe(400);
   expect((await upload(a.idToken, image)).ok()).toBeTruthy();
   const imageUrl = `/api/image?sessionId=${sessionId}&submissionId=${a.localId}`;
+  // Firebase Hosting strips cookies other than __session. Exercise image auth
+  // without an Authorization header, exactly as browser image requests work.
+  const signedIn = await request.post('/api/auth', {
+    headers: { Authorization: `Bearer ${a.idToken}`, Origin: origin },
+  });
+  expect(signedIn.ok()).toBeTruthy();
+  expect(signedIn.headers()['set-cookie']).toContain('__session=');
+  expect(signedIn.headers()['set-cookie'].toLowerCase()).toContain('httponly');
+  expect((await request.get(imageUrl)).status()).toBe(200);
+  expect((await request.delete('/api/auth', { headers: { Origin: origin } })).ok()).toBeTruthy();
+  expect((await request.get(imageUrl)).status()).toBe(401);
+
   expect(
     (await request.get(imageUrl, { headers: { Authorization: `Bearer ${b.idToken}` } })).status(),
   ).toBe(404);

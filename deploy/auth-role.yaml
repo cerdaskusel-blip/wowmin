@@ -1,0 +1,6 @@
+title: WOWMIN temporary identity cleanup
+description: Read identities and delete temporary participants; cannot grant facilitator claims.
+stage: GA
+includedPermissions:
+  - firebaseauth.users.get
+  - firebaseauth.users.delete

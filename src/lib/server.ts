@@ -19,7 +19,7 @@ export function requireOrigin(req: NextRequest) {
 export async function identity(req: NextRequest, cookie = false) {
   const token =
     req.headers.get('authorization')?.replace(/^Bearer /, '') ||
-    (cookie ? req.cookies.get('wow-token')?.value : undefined);
+    (cookie ? req.cookies.get('__session')?.value : undefined);
   if (!token) throw new ApiError(401, 'Please sign in again.');
   try {
     return await adminAuth.verifyIdToken(token, true);

@@ -1,0 +1,9 @@
+title: WOWMIN workshop storage
+description: Verify bucket privacy and manage workshop objects, without altering bucket policy.
+stage: GA
+includedPermissions:
+  - storage.buckets.get
+  - storage.objects.get
+  - storage.objects.list
+  - storage.objects.create
+  - storage.objects.delete
