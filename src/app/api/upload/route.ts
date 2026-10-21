@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
   try {
     requireOrigin(req);
     const user = await identity(req);
+    // Keep the original pre-body abuse guard as well as the session-scoped quota.
+    await limit(`upload-entry:${user.uid}`, 5, 60_000, user.uid);
 
     const reader = req.body?.getReader();
     if (!reader) throw new ApiError(400, 'Choose a sticker image.');
