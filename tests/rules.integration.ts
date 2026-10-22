@@ -4,7 +4,17 @@ import {
   assertFails,
   assertSucceeds,
 } from '@firebase/rules-unit-testing';
-import { doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import {
+  doc,
+  setDoc,
+  getDoc,
+  collection,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+  deleteDoc,
+} from 'firebase/firestore';
 import { ref, uploadBytes, getBytes } from 'firebase/storage';
 const env = await initializeTestEnvironment({
   projectId: 'demo-wow-rules',
@@ -20,6 +30,10 @@ try {
     await setDoc(doc(db, 'sessions/room/submissions/alice'), { status: 'pending' });
     await setDoc(doc(db, 'sessions/room/submissions/bob'), { status: 'approved' });
     await setDoc(doc(db, 'sessions/room/votes/alice'), { submissionId: 'bob' });
+    await setDoc(doc(db, 'activityTemplates/owned'), {
+      ownerId: 'host',
+      title: 'Private activity',
+    });
     await setDoc(doc(db, 'codes/SECRET'), { sessionId: 'room' });
     await setDoc(doc(db, 'sessions/room/attendance/alice'), { joinedAt: Date.now() });
     await setDoc(doc(db, 'sessions/room/seats/0'), { memberId: 'alice' });
@@ -28,6 +42,19 @@ try {
   const b = env.authenticatedContext('bob').firestore();
   const host = env.authenticatedContext('host', { facilitator: true }).firestore();
   const outsider = env.authenticatedContext('outsider').firestore();
+  // Templates use authenticated backend operations; direct client access stays denied.
+  await assertFails(getDoc(doc(host, 'activityTemplates/owned')));
+  await assertFails(getDoc(doc(outsider, 'activityTemplates/owned')));
+  await assertFails(
+    getDoc(doc(env.unauthenticatedContext().firestore(), 'activityTemplates/owned')),
+  );
+  await assertFails(
+    getDocs(query(collection(host, 'activityTemplates'), where('ownerId', '==', 'host'))),
+  );
+  await assertFails(setDoc(doc(host, 'activityTemplates/new'), { ownerId: 'host' }));
+  await assertFails(setDoc(doc(outsider, 'activityTemplates/forged'), { ownerId: 'host' }));
+  await assertFails(updateDoc(doc(host, 'activityTemplates/owned'), { title: 'Bypass backend' }));
+  await assertFails(deleteDoc(doc(host, 'activityTemplates/owned')));
   await assertSucceeds(getDoc(doc(a, 'sessions/room')));
   await assertFails(getDoc(doc(outsider, 'sessions/room')));
   await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'sessions/room')));
@@ -84,7 +111,7 @@ try {
   });
   await assertFails(getDoc(doc(host, 'sessions/room')));
   await assertFails(getDoc(doc(a, 'sessions/room/votes/alice')));
-  console.log('Firestore and Storage rules: 30 authorization checks passed.');
+  console.log('Firestore and Storage rules: 38 authorization checks passed.');
 } finally {
   await env.cleanup();
 }
