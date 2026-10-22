@@ -157,3 +157,74 @@ its owner's home screen, deny participant access and then delete through the sam
 action. Do not change the global expiry to test it. No scheduler verification is
 needed. Log only operational status; avoid participant content, tokens and bodies.
 Record image digest, rules revision, manual cleanup result and privacy limitations.
+
+## V2 release gate and rollback (approval required; do not run during QA)
+
+Use [V2-STEP-6.md](V2-STEP-6.md) for the current release decision; the older
+validation reports are historical. The approved V2 design stays on
+`feature/wow-mean-v2` until release approval. Record the approved commit, image
+**digest**, current Cloud Run traffic/revisions, Hosting release and security-rule
+versions before changing anything. Do not print environment/secret values in QA
+reports. Confirm Firestore TTL policies as well as backups/PITR: a document TTL
+must not silently replace the verified manual deletion flow.
+
+After the separate production review and approval:
+
+1. Verify the existing SDK configuration, facilitator custom claims, Google and
+   Anonymous Auth, authorized domains, actual bucket/database locations and
+   region compatibility. Check shared-Wi-Fi anonymous signup quotas. Confirm no
+   Scheduler/cleanup worker or TTL conflicts with manual deletion.
+2. Review runtime IAM, pinned secret version, Storage versioning/soft delete/
+   retention/holds, Firestore backup/PITR/exports and all log sinks/retention.
+   Review upload memory/load under the chosen Cloud Run limits. The proposed
+   concurrency 40 with 1 GiB has not been validated with 60 large uploads; do not
+   treat the small emulator fixtures as capacity proof.
+3. Build the approved image with the **existing project's public SDK values**,
+   scan application/OS dependencies and push only after approval. The synthetic
+   local QA image must never be released. Keep emulator variables, credentials
+   files and local YAML out of the image. Confirm `public/brand` exists in runtime.
+4. Deploy a candidate without traffic first (`--no-traffic --tag v2-candidate` on
+   the reviewed deploy command above). Check startup, official assets and denied
+   unauthenticated requests. A tagged `run.app` preview is not a full browser
+   rehearsal: writes deliberately require the configured Hosting origin. Do not
+   broaden the allowed origin to work around this.
+   If the service has never existed, there is no previous revision to restore;
+   stop and agree an initial-release/abort plan with the operator before deploying.
+   Do not assume `--no-traffic` provides a rehearsal for a first-ever service.
+5. Apply only reviewed rules/indexes/Hosting settings, then explicitly route
+   traffic to the approved candidate. Existing rules are unchanged in V2; retain
+   their known-good versions. Run the synthetic Hosting smoke test below and the
+   physical iPhone checklist in `V2-STEP-6.md` before admitting teachers.
+
+PowerShell 7 rollback preparation and traffic commands (use operator-reviewed
+revision names, never guess them):
+
+```powershell
+# Read/save revision names and traffic before deployment; no secrets are printed.
+gcloud run services describe $Web --region $Region --project $Project --format='json(status.traffic,status.latestReadyRevisionName)'
+$PreviousRevision = Read-Host 'Previously validated revision to restore'
+$CandidateRevision = Read-Host 'Approved V2 candidate revision'
+# After explicit release approval and candidate validation:
+gcloud run services update-traffic $Web --to-revisions "$CandidateRevision=100" --region $Region --project $Project
+# If smoke tests fail, stop new admissions and restore the recorded stable revision:
+gcloud run services update-traffic $Web --to-revisions "$PreviousRevision=100" --region $Region --project $Project
+```
+
+Prefer a previously validated **V2-compatible** revision. Before reverting to V1,
+close admissions and finish verified manual deletion of active V2 sessions using
+the compatible release; otherwise prompts/template routes may disappear while
+cleanup remains unfinished. Preserve cleanup records, saved templates, Auth
+facilitators and signing-secret versions. Do not restore deleted participant data
+or clear a failed cleanup job to make rollback look successful. If Hosting/rules
+were also changed, restore their recorded, compatible release via Firebase
+Hosting release history and the reviewed rules source; never loosen rules.
+
+After traffic changes, check the official URL, Google facilitator login, one
+activity with two synthetic participants (code + QR invitation), prompts/copy,
+upload/approve, image/download, projector, single/self-vote enforcement, tied
+results and verified manual deletion. Confirm the template and facilitator remain
+and session images/records/eligible anonymous users are gone. Confirm closed
+joining and denied download after deletion. Record timings/status only, not
+participant content or tokens. Stop admissions and roll back on security,
+cleanup or authentication failure. No command above has been run on production
+as part of local V2 QA.
