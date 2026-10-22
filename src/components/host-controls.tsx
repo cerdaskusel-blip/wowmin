@@ -105,8 +105,9 @@ export function HostControls({
           <details className="manual-stages">
             <summary>Manual stage controls / reopen submissions</summary>
             <p>
-              Changes reset the stage timer and resume the workshop. Stages cannot reopen after
-              voting starts.
+              {session.activity
+                ? 'Peringkat aktiviti berkongsi masa berbaki. Tukar peringkat tidak memulakan masa baharu. Peringkat tidak boleh dibuka semula selepas undian bermula.'
+                : 'Changes reset the stage timer and resume the workshop. Stages cannot reopen after voting starts.'}
             </p>
             <div className="host-actions">
               <label>

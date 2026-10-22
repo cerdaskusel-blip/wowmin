@@ -31,6 +31,7 @@ import {
   Member,
   Submission,
   nextStage,
+  isActivityStage,
 } from '@/lib/workshop';
 import { useIdentity } from './provider';
 import {
@@ -43,6 +44,7 @@ import {
   StickerImage,
   useNow,
 } from './ui';
+import { ActivityPrompts } from './activity-prompts';
 import { UploadPanel } from './upload';
 import { Gallery } from './wall';
 import { HostControls, ReviewDesk, ProgressList } from './host-controls';
@@ -234,7 +236,7 @@ function Room({
           ROOM <b>{session.code}</b>
         </span>
       </header>
-      <div className="stage-strip" tabIndex={0} aria-label="Workshop stages">
+      <section className="stage-strip" tabIndex={0} aria-label="Workshop stages">
         {STAGES.map((stage, i) => (
           <span
             key={stage}
@@ -247,7 +249,7 @@ function Room({
             {['Welcome', 'Your prompt', 'Create', 'Submit', 'Gallery', 'Vote', 'Celebrate'][i]}
           </span>
         ))}
-      </div>
+      </section>
       <main className={`room-main ${host ? 'host-main' : ''}`}>
         <div className="stage-heading">
           <div>
@@ -255,15 +257,30 @@ function Room({
               {host ? 'FACILITATOR DASHBOARD' : 'YOUR CREATIVE PLAYGROUND'} · WOW #1
             </span>
             <h1>
-              {STAGE_INFO[session.stage].title}
+              {!host && session.activity && isActivityStage(session.stage)
+                ? session.activity.title
+                : STAGE_INFO[session.stage].title}
               <span className="coral-dot">.</span>
             </h1>
-            <p>{STAGE_INFO[session.stage].hint}</p>
+            <p
+              style={
+                session.activity && !host && isActivityStage(session.stage)
+                  ? { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }
+                  : undefined
+              }
+            >
+              {!host && session.activity && isActivityStage(session.stage)
+                ? session.activity.description
+                : STAGE_INFO[session.stage].hint}
+            </p>
           </div>
           {session.stage !== 'results' && (
             <div className="countdown">
               <small>
-                <Clock size={12} /> TIME FOR THIS STAGE
+                <Clock size={12} />{' '}
+                {session.activity && isActivityStage(session.stage)
+                  ? 'MASA AKTIVITI BERBAKI'
+                  : 'TIME FOR THIS STAGE'}
               </small>
               <Timer end={session.stageEndsAt} pausedRemainingMs={session.pausedRemainingMs} />
             </div>
@@ -328,7 +345,7 @@ function Room({
           </>
         ) : (
           <div className={`participant-experience stage-${session.stage}`}>
-            {session.stage === 'lobby' && (
+            {session.stage === 'lobby' && !session.activity && (
               <div className="welcome-panel">
                 <div>
                   <span className="pill">YOU’RE IN. LET’S GET CREATIVE.</span>
@@ -350,12 +367,16 @@ function Room({
                 <StickerArt kind="sun" />
               </div>
             )}
-            <div
-              className="participant-lab"
-              hidden={!['prompt', 'generate', 'submit'].includes(session.stage)}
-            >
-              <PromptLab session={session} own={own} />
-            </div>
+            {session.activity ? (
+              isActivityStage(session.stage) && <ActivityPrompts session={session} />
+            ) : (
+              <div
+                className="participant-lab"
+                hidden={!['prompt', 'generate', 'submit'].includes(session.stage)}
+              >
+                <PromptLab session={session} own={own} />
+              </div>
+            )}
             <UploadPanel session={session} own={own} />
             {['gallery', 'vote'].includes(session.stage) && (
               <>
@@ -379,10 +400,10 @@ function Room({
           </div>
         )}
       </main>
-      <div className="room-footer">
+      <footer className="room-footer">
         WOW #1 <span>Made by teachers. Celebrated together.</span>
         <Connection />
-      </div>
+      </footer>
     </>
   );
 }

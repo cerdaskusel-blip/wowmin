@@ -191,3 +191,20 @@ export function wallOrder(id: string, sessionId: string) {
   for (const c of sessionId + id) hash = Math.imul(hash ^ c.charCodeAt(0), 16777619);
   return hash >>> 0;
 }
+
+// Template creation/upload stages share the existing deadline, not separate clocks.
+export function isActivityStage(stage: Stage) {
+  return ['lobby', 'prompt', 'generate', 'submit'].includes(stage);
+}
+export function capDeadline(session: Pick<Workshop, 'activity' | 'expiresAt'>, deadline: number) {
+  return session.activity ? Math.min(session.expiresAt, deadline) : deadline;
+}
+export function nextStageDeadline(
+  session: Pick<Workshop, 'activity' | 'stage' | 'stageEndsAt' | 'pausedRemainingMs' | 'expiresAt'>,
+  next: Stage,
+  now = Date.now(),
+) {
+  if (session.activity && isActivityStage(session.stage) && isActivityStage(next))
+    return capDeadline(session, now + remainingMs(session, now));
+  return STAGE_INFO[next].seconds ? capDeadline(session, now + STAGE_INFO[next].seconds * 1000) : 0;
+}

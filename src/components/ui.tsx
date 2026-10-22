@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Sparkles, ArrowUpRight, Radio, WifiOff } from 'lucide-react';
-import { STAGES, STAGE_INFO } from '@/lib/workshop';
+import { STAGES, STAGE_INFO, isActivityStage } from '@/lib/workshop';
 import { useIdentity } from './provider';
 export function Brand() {
   return (
@@ -168,7 +168,8 @@ export function WorkshopBudget({ session }: { session: import('@/lib/workshop').
       (session.pausedRemainingMs ?? Math.max(0, session.stageEndsAt - now - offset)) / 1000,
     ) +
     STAGES.slice(STAGES.indexOf(session.stage) + 1).reduce(
-      (sum, stage) => sum + STAGE_INFO[stage].seconds,
+      (sum, stage) =>
+        sum + (session.activity && isActivityStage(stage) ? 0 : STAGE_INFO[stage].seconds),
       0,
     );
   return (

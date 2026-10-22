@@ -17,11 +17,13 @@ import {
 } from '@/lib/server';
 import {
   nextStage,
-  STAGE_INFO,
   rankVotes,
   Stage,
   remainingMs,
   acceptingVotes,
+  nextStageDeadline,
+  capDeadline,
+  type Workshop,
 } from '@/lib/workshop';
 export const runtime = 'nodejs';
 const text = (max: number) =>
@@ -130,9 +132,11 @@ export async function POST(req: NextRequest) {
           ...(activity ? { activity } : {}),
           code,
           hostId: user.uid,
-          stage: 'lobby',
+          stage: activity ? 'generate' : 'lobby',
           lifecycle: 'active',
-          stageEndsAt: now + 60_000,
+          stageEndsAt: activity
+            ? Math.min(expiresAt, now + activity.durationMinutes * 60_000)
+            : now + 60_000,
           createdAt: now,
           expiresAt: expiresAt,
         });
@@ -241,7 +245,7 @@ export async function POST(req: NextRequest) {
         tx.update(ref, {
           stage: next,
           pausedRemainingMs: null,
-          stageEndsAt: STAGE_INFO[next].seconds ? Date.now() + STAGE_INFO[next].seconds * 1000 : 0,
+          stageEndsAt: nextStageDeadline(s as Workshop, next),
           ...results,
         });
       } else if (data.action === 'pause') {
@@ -251,14 +255,26 @@ export async function POST(req: NextRequest) {
       } else if (data.action === 'resume') {
         if (s.pausedRemainingMs == null)
           throw new ApiError(409, 'The workshop is already running.');
-        tx.update(ref, { stageEndsAt: Date.now() + s.pausedRemainingMs, pausedRemainingMs: null });
+        tx.update(ref, {
+          stageEndsAt: capDeadline(s as Workshop, Date.now() + s.pausedRemainingMs),
+          pausedRemainingMs: null,
+        });
       } else if (data.action === 'extend') {
         if (s.stage === 'results') throw new ApiError(409, 'The workshop is complete.');
         tx.update(
           ref,
           s.pausedRemainingMs != null
-            ? { pausedRemainingMs: s.pausedRemainingMs + 60_000 }
-            : { stageEndsAt: Math.max(s.stageEndsAt, Date.now()) + 60_000 },
+            ? {
+                pausedRemainingMs: s.activity
+                  ? Math.min(s.pausedRemainingMs + 60_000, Math.max(0, s.expiresAt - Date.now()))
+                  : s.pausedRemainingMs + 60_000,
+              }
+            : {
+                stageEndsAt: capDeadline(
+                  s as Workshop,
+                  Math.max(s.stageEndsAt, Date.now()) + 60_000,
+                ),
+              },
         );
       } else if (data.action === 'moderate') {
         if (['vote', 'results'].includes(s.stage))
