@@ -16,7 +16,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:ephemeral": "node --env-file=.env.local --import tsx tests/ephemeral.integration.ts",
-    "test:activities": "node --env-file=.env.local --import tsx tests/activities.integration.ts"
+    "test:activities": "node --env-file=.env.local --import tsx tests/activities.integration.ts",
+    "test:release": "node --env-file=.env.local --import tsx tests/release.integration.ts"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.3.0",
