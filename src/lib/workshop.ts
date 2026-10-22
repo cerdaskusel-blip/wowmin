@@ -1,3 +1,4 @@
+import type { ActivityTemplate } from './activities';
 export const STAGES = [
   'lobby',
   'prompt',
@@ -114,6 +115,7 @@ export function makePrompt(caption: string, style: string, character: string) {
   return `Create one square digital sticker for a teacher workshop. Character: ${character.trim() || 'a cheerful fictional teacher mascot'}. Style: ${selected.prompt}. Include the exact caption: “${caption.trim()}”. Make the text large and legible, with a bold white die-cut border, a simple clean background, and a clear expressive pose. Keep it uplifting and suitable for a classroom. Use an original fictional character; no real person, selfie, school logo, or student information. Output only the finished sticker image.`;
 }
 export type Workshop = {
+  activity?: ActivityTemplate;
   id: string;
   hostId: string;
   title: string;

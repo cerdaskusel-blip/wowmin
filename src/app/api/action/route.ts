@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { randomInt, randomBytes } from 'crypto';
+import { activityId, activityFields, type ActivityTemplate } from '@/lib/activities';
 import { sequenceCode } from '@/lib/join-code';
 import { store, adminAuth } from '@/lib/admin';
 import { MAX_PARTICIPANTS, retentionMs, assertActive } from '@/lib/lifecycle';
@@ -31,7 +32,15 @@ const text = (max: number) =>
     .max(max)
     .refine((s) => !/[\u0000-\u001f\u007f]/.test(s));
 const schema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('create'), title: text(70) }),
+  z
+    .object({
+      action: z.literal('create'),
+      title: text(70).optional(),
+      templateId: activityId.optional(),
+    })
+    .refine((data) => !!data.title || !!data.templateId, {
+      message: 'Choose a title or activity template.',
+    }),
   z.object({
     action: z.literal('join'),
     code: z.string().regex(/^[A-Z2-9]{6,32}$/),
@@ -86,6 +95,26 @@ export async function POST(req: NextRequest) {
       const ref = store.collection('sessions').doc();
       const sequenceRef = store.doc('configuration/joinCodes');
       await store.runTransaction(async (tx) => {
+        let activity: ActivityTemplate | undefined;
+        if (data.templateId) {
+          const template = await tx.get(store.doc(`activityTemplates/${data.templateId}`));
+          if (!template.exists) throw new ApiError(404, 'Templat tidak ditemui.');
+          const source = template.data()!;
+          if (source.ownerId !== user.uid) throw new ApiError(403, 'Templat ini bukan milik anda.');
+          const fields = activityFields.parse({
+            title: source.title,
+            description: source.description,
+            durationMinutes: source.durationMinutes,
+            prompts: source.prompts,
+          });
+          activity = {
+            ...fields,
+            id: template.id,
+            ownerId: source.ownerId,
+            createdAt: source.createdAt,
+            updatedAt: source.updatedAt,
+          };
+        }
         const configuration = (await tx.get(sequenceRef)).data();
         const sequence = BigInt(configuration?.next ?? '0');
         const key = configuration?.key ?? randomBytes(32).toString('hex');
@@ -97,7 +126,8 @@ export async function POST(req: NextRequest) {
         tx.create(codeRef, { sessionId: ref.id, expiresAt: expiresAt });
         tx.create(ref, {
           id: ref.id,
-          title: data.title,
+          title: activity?.title ?? data.title!,
+          ...(activity ? { activity } : {}),
           code,
           hostId: user.uid,
           stage: 'lobby',

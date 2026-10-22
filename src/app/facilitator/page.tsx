@@ -10,6 +10,7 @@ import {
 import { ArrowRight, ShieldCheck, Presentation, Users, Timer } from 'lucide-react';
 import { Header, ErrorMessage, Loading } from '@/components/ui';
 import { useIdentity } from '@/components/provider';
+import { ActivityDashboard } from '@/components/activities';
 import { PendingCleanups } from '@/components/cleanup';
 import { auth, api, isLocal } from '@/lib/firebase';
 export default function Facilitator() {
@@ -51,6 +52,7 @@ export default function Facilitator() {
     <>
       <Header label="A great room starts with you." />
       <main className="studio">
+        {facilitator && <ActivityDashboard key={user?.uid} />}
         <div>
           <span className="eyebrow">
             <span className="edition">BACKSTAGE</span> FACILITATOR STUDIO
