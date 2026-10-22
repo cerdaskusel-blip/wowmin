@@ -1,8 +1,8 @@
 # Wow Mean! V2 — Langkah 5
 
 Branch `feature/wow-mean-v2`, sambungan daripada `e60d66e`.
-**Status: visual dan UX tersedia untuk semakan sementara; padanan logo dan karakter
-mockup rasmi belum lengkap. Jangan anggap halaman utama telah diluluskan.**
+**Status: logo dan karakter daripada mockup rasmi telah dipasang; Langkah 5
+sedia untuk semakan visual pengguna. Belum merge atau deploy.**
 
 ## Perubahan
 
@@ -39,7 +39,7 @@ pemadaman manual. Tiada scheduler, worker atau integrasi penjanaan imej ditambah
 Halaman utama, Dashboard, peserta, galeri/undian dan keputusan semuanya dirakam
 melalui pelayar, termasuk borang dan kawalan sebenar. Data ialah rekaan tempatan.
 
-## Pengesahan
+## Pengesahan terdahulu (commit `66961f0`)
 
 - Typecheck, build Next.js standalone, Prettier dan `git diff --check`: lulus.
 - Ujian unit: **13 lulus**. Firebase rules: **38 semakan lulus**.
@@ -57,15 +57,18 @@ melalui pelayar, termasuk borang dan kawalan sebenar. Data ialah rekaan tempatan
 
 ## Perbezaan mockup dan baki kerja
 
-1. **Penghalang utama:** lampiran dapat dilihat dalam perbualan, tetapi fail JPG
-   asal tidak tersedia dalam workspace; laluan `C:/Users/...` berada pada komputer
-   pengguna. Logo grafik, karakter cikgu dan hiasan sticker asal belum dapat dipotong
-   daripada sumber itu. Paparan kini menggunakan teks nama biasa tanpa karakter
-   pengganti. Percubaan pengasingan automatik ditolak kerana mengubah butiran identiti;
-   hasil tersebut tidak dimasukkan ke aplikasi atau repository.
-2. Fail JPG/PNG asal atau pautan muat turun diperlukan untuk melengkapkan padanan
-   halaman utama. Selepas itu, grafik akan diasingkan sambil mengekalkan tagline,
-   butang dan navigasi sebagai HTML. **Langkah 5 masih memerlukan semakan aset ini.**
+1. Fail asal kini tersedia di `public/brand/wow-mean-official.jpeg`, disalin tepat
+   daripada muat naik `c82bb70` pada `main`. Branch kerja dipull (sudah terkini);
+   hanya aset itu diambil, tanpa merge kod dari `main`.
+2. `public/brand/wow-mean-hero.png` ialah potongan lossless 1536×660 daripada
+   bahagian atas JPG, mengekalkan logo, cikgu dan hiasan asal. Tiada generasi AI,
+   pengubahan identiti atau butang imej digunakan. Oleh sebab JPG tiada lapisan
+   telus, latar asal dalam potongan turut dikekalkan. Lihat
+   [nota aset dan cara menghasilkan semula](public/brand/README.md).
+   Tagline dipaparkan sebagai HTML di atas pill asal; font/kontras mengikut tema
+   aplikasi. Ikon butang menggunakan Lucide sedia ada, berbeza sedikit daripada
+   ikon ilustrasi mockup. PNG/SVG asal berlapis boleh meningkatkan fleksibiliti
+   pemisahan aset jika dibekalkan kemudian, tetapi tidak menghalang paparan ini.
 3. Bentuk latar dibina dengan CSS responsif. Dua butang utama disusun menegak pada
    telefon bagi menjaga saiz sentuhan; desktop mengekalkan dua lajur. Warna teks
    dan tindakan tertentu digelapkan untuk kebolehbacaan.
@@ -74,4 +77,30 @@ melalui pelayar, termasuk borang dan kawalan sebenar. Data ialah rekaan tempatan
    membuktikan prestasi rangkaian/peranti production.
 
 Tiada merge ke `main`, deployment atau perubahan production. Jangan teruskan
-Langkah 6 sebelum padanan aset rasmi dan semakan visual selesai.
+Langkah 6 sebelum semakan visual pengguna selesai.
+
+## Sambungan Langkah 5 — aset rasmi
+
+Fail paparan yang diubah: `src/app/page.tsx`, `src/app/wow-mean.css`.
+`Dockerfile` dan `.dockerignore` turut memasukkan `public` supaya aset disertakan
+dalam imej runtime kelak; tiada deployment atau perubahan infrastruktur dibuat.
+Ditambah aset/nota dalam `public/brand`, ujian `tests/e2e/landing.spec.ts` dan
+screenshot utama telefon/desktop yang menggantikan screenshot placeholder.
+Backend, undian, upload, pemasa dan pemadaman tidak diubah.
+
+- JPG asal disahkan mempunyai Git blob yang sama dengan fail muat naik; piksel
+  PNG disahkan sepadan tepat dengan kawasan potongan asal.
+- Build standalone, typecheck, format dan `git diff --check`: lulus.
+- Ujian unit: **13 lulus**.
+- Ujian halaman utama: **1 lulus**, termasuk imej berjaya dimuat, tagline HTML,
+  navigasi kedua-dua pautan dengan papan kekunci, kod QR melalui query string,
+  tiada overflow pada 320/390/768/1440/1920 piksel dan tiada pelanggaran axe pada
+  saiz tersebut. Screenshot akhir: 390×844 dan 1440×1000 (full page).
+- Regresi prompt: larian pertama **4 lulus, 1 gagal** kerana ujian terus
+  menavigasi selepas klik login sebelum pengesahan fasilitator selesai. Fixture
+  ujian kini menunggu Dashboard sedia sebelum navigasi; logik aplikasi tidak diubah.
+  Ulangan penuh: **5 lulus**, meliputi QR/kod/nama, 1–5 prompt, salinan
+  berbilang baris, fallback manual, upload WebP, undian/keputusan dan cleanup
+  fixture. Jumlah senario pelayar unik yang disahkan dalam sambungan: **6 lulus**.
+- Safari fizikal dan build imej Docker tidak diuji dalam sambungan ini. Runtime
+  standalone tempatan dengan aset `public` diuji melalui Chromium dan emulator.

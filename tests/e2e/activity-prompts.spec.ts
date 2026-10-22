@@ -75,6 +75,7 @@ for (const count of [1, 2, 3, 4, 5]) {
       expect(session.expiresAt - session.createdAt).toBe(4 * 3600000);
       await host.goto('/facilitator');
       await host.getByRole('button', { name: 'Masuk Fasilitator Tempatan' }).click();
+      await expect(host.getByRole('button', { name: 'Cipta Sesi', exact: true })).toBeVisible();
       await host.goto(`/session/${sessionId}`);
       await expect(host.locator('.qr svg').first()).toBeVisible();
       // Follow the exact invitation URL shared with the QR, or enter its code manually.
