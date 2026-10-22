@@ -104,3 +104,22 @@ Backend, undian, upload, pemasa dan pemadaman tidak diubah.
   fixture. Jumlah senario pelayar unik yang disahkan dalam sambungan: **6 lulus**.
 - Safari fizikal dan build imej Docker tidak diuji dalam sambungan ini. Runtime
   standalone tempatan dengan aset `public` diuji melalui Chromium dan emulator.
+
+## Pembetulan akhir yang diluluskan — hierarki navigasi
+
+- **Masuk Sesi** menjadi satu-satunya tindakan besar pada hero, di tengah.
+- **Ruang Fasilitator** dipindahkan ke kanan bawah footer sebagai pautan sekunder
+  bergaris dengan ikon kecil. Kawasan sentuhan minimum 44 piksel; kedudukan dalam
+  aliran dokumen mengelakkan pertindihan atau pemotongan pada telefon.
+- Logo/karakter rasmi, tagline, warna, kandungan dan bahagian aplikasi lain kekal.
+  Kedua-dua destinasi navigasi asal dikekalkan.
+- Ujian halaman utama diperluas untuk menguji navigasi papan kekunci kedua-dua
+  pautan, saiz sentuhan dan kedudukan pautan footer pada lima lebar skrin.
+- Screenshot `landing-mobile.png` dan `landing-desktop.png` dirakam semula.
+
+Pengesahan akhir: typecheck, build standalone, Prettier dan `git diff --check`
+lulus. Ujian halaman utama lulus pada 320/390/768/1440/1920 piksel, termasuk
+semakan axe tanpa pelanggaran, kawasan sentuhan, tiada pertindihan dengan teks
+footer, navigasi kedua-dua pautan dengan papan kekunci dan kod sesi melalui URL.
+Screenshot telefon/desktop telah disemak. Safari fizikal tidak diuji semula.
+Tiada merge atau deployment.

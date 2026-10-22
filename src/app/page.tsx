@@ -155,11 +155,6 @@ export default function Home() {
               <span>Masuk Sesi</span>
               <ArrowRight className="action-arrow" aria-hidden="true" />
             </a>
-            <Link href="/facilitator" className="landing-action facilitator-action">
-              <Presentation aria-hidden="true" />
-              <span>Ruang Fasilitator</span>
-              <ArrowRight className="action-arrow" aria-hidden="true" />
-            </Link>
           </nav>
         </div>
       </section>
@@ -173,6 +168,12 @@ export default function Home() {
       </section>
       <footer className="landing-footer">
         Wow Mean! <span>Cipta | Kongsi | Undi</span>
+        <nav className="landing-secondary-nav" aria-label="Akses fasilitator">
+          <Link href="/facilitator" className="landing-facilitator-link">
+            <Presentation size={18} aria-hidden="true" />
+            Ruang Fasilitator
+          </Link>
+        </nav>
       </footer>
     </main>
   );

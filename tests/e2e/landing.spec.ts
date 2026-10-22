@@ -44,13 +44,22 @@ test('official landing: responsive artwork, accessible text and working navigati
     await join.focus();
     await page.keyboard.press('Enter');
     await expect(page.getByLabel('Kod Sesi')).toBeInViewport();
-    await page.evaluate(() => scrollTo(0, 0));
+    const host = page.getByRole('link', { name: 'Ruang Fasilitator', exact: true });
+    await host.scrollIntoViewIfNeeded();
+    await expect(host).toBeInViewport();
+    const bounds = await host.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.height).toBeGreaterThanOrEqual(44);
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width);
+    const footerTagline = await page.locator('.landing-footer > span').boundingBox();
+    expect(footerTagline!.y + footerTagline!.height).toBeLessThanOrEqual(bounds!.y);
+    await host.focus();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/facilitator$/);
+    await expect(page.getByRole('heading', { name: 'Masuk ke Ruang Fasilitator' })).toBeVisible();
+    await page.goto('/');
   }
-  const host = page.getByRole('link', { name: 'Ruang Fasilitator', exact: true });
-  await host.focus();
-  await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/\/facilitator$/);
-  await expect(page.getByRole('heading', { name: 'Masuk ke Ruang Fasilitator' })).toBeVisible();
   await page.goto('/?code=ABC234');
   await expect(page.getByLabel('Kod Sesi')).toHaveValue('ABC234');
   await expect(page.getByLabel('Kod Sesi')).toBeInViewport();
