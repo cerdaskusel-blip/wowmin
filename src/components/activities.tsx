@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useId } from 'react';
+import { Plus, Play, Pencil, Trash2, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { auth, api } from '@/lib/firebase';
 import type { ActivityFields, ActivityTemplate } from '@/lib/activities';
@@ -88,12 +89,21 @@ export function ActivityDashboard() {
     }
   }
   return (
-    <section className="panel" style={{ gridColumn: '1 / -1' }} aria-label="Dashboard Aktiviti">
-      <h2>Aktiviti Saya</h2>
-      <p>Simpan aktiviti anda, kemudian pilih Mula Sesi untuk mendapatkan kod dan QR baharu.</p>
-      <button className="button primary" disabled={busy || loading} onClick={() => edit()}>
-        Cipta Aktiviti
-      </button>
+    <section
+      className="panel activity-dashboard"
+      style={{ gridColumn: '1 / -1' }}
+      aria-label="Dashboard Aktiviti"
+    >
+      <div className="activity-dashboard-heading">
+        <div>
+          <h1>Ruang Fasilitator</h1>
+          <h2>Aktiviti Saya</h2>
+          <p>Simpan aktiviti anda, kemudian pilih Mula Sesi untuk mendapatkan kod dan QR baharu.</p>
+        </div>
+        <button className="button primary" disabled={busy || loading} onClick={() => edit()}>
+          <Plus size={18} aria-hidden="true" /> Cipta Aktiviti
+        </button>
+      </div>
       <p role="status">{loading ? 'Memuatkan aktiviti…' : notice}</p>
       <ErrorMessage message={error} />
       {error && (
@@ -108,33 +118,42 @@ export function ActivityDashboard() {
       {!loading && !error && !templates.length && (
         <p>Belum ada aktiviti. Cipta templat pertama anda.</p>
       )}
-      {templates.map((template) => (
-        <article className="panel" key={template.id} aria-label={`Aktiviti: ${template.title}`}>
-          <h3>{template.title}</h3>
-          <p style={{ whiteSpace: 'pre-wrap' }}>{template.description}</p>
-          <p>
-            {template.durationMinutes} minit · {template.prompts.length} prompt
-          </p>
-          <div className="two-buttons">
-            <button className="button primary" disabled={busy} onClick={() => start(template)}>
-              Mula Sesi
-            </button>
-            <button className="button secondary" disabled={busy} onClick={() => edit(template)}>
-              Edit Aktiviti
-            </button>
-            <button
-              className="button secondary"
-              disabled={busy}
-              onClick={() => {
-                setDeleting(template);
-                setFormError('');
-              }}
-            >
-              Padam Templat
-            </button>
-          </div>
-        </article>
-      ))}
+      <div className="activity-grid">
+        {templates.map((template) => (
+          <article
+            className="panel activity-card"
+            key={template.id}
+            aria-label={`Aktiviti: ${template.title}`}
+          >
+            <h3>{template.title}</h3>
+            <p className="activity-description" style={{ whiteSpace: 'pre-wrap' }}>
+              {template.description}
+            </p>
+            <p className="activity-meta">
+              <Clock size={16} aria-hidden="true" />
+              {template.durationMinutes} minit · {template.prompts.length} prompt
+            </p>
+            <div className="two-buttons">
+              <button className="button primary" disabled={busy} onClick={() => start(template)}>
+                <Play size={16} aria-hidden="true" /> Mula Sesi
+              </button>
+              <button className="button secondary" disabled={busy} onClick={() => edit(template)}>
+                <Pencil size={16} aria-hidden="true" /> Edit Aktiviti
+              </button>
+              <button
+                className="button secondary template-delete"
+                disabled={busy}
+                onClick={() => {
+                  setDeleting(template);
+                  setFormError('');
+                }}
+              >
+                <Trash2 size={16} aria-hidden="true" /> Padam Templat
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
       {draft && (
         <Modal
           title={editingId ? 'Edit Aktiviti' : 'Cipta Aktiviti'}

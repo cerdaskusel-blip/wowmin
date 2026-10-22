@@ -8,14 +8,15 @@ import '@fontsource/space-grotesk/700.css';
 import type { Metadata } from 'next';
 import { Provider } from '@/components/provider';
 import './globals.css';
+import './wow-mean.css';
 export const metadata: Metadata = {
-  title: 'WOW #1 — Big ideas. Tiny stickers.',
+  title: 'Wow Mean! — Cipta | Kongsi | Undi',
   description:
-    'A live creativity workshop for teachers. Make a prompt, create a sticker, and cheer each other on.',
+    'Bengkel kreativiti interaktif untuk guru. Cipta karya dengan AI, kongsi inspirasi dan undi bersama.',
 };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="ms">
       <body>
         <Provider>{children}</Provider>
       </body>

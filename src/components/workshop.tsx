@@ -1,4 +1,5 @@
 'use client';
+import { STAGE_COPY, COLLECTION_COPY, STYLE_COPY } from '@/lib/bahasa';
 import { useEffect, useState, ReactNode } from 'react';
 import Link from 'next/link';
 import { doc, collection, onSnapshot, query, where } from 'firebase/firestore';
@@ -25,7 +26,6 @@ import {
   COLLECTIONS,
   STYLES,
   STAGES,
-  STAGE_INFO,
   makePrompt,
   Workshop,
   Member,
@@ -34,16 +34,7 @@ import {
   isActivityStage,
 } from '@/lib/workshop';
 import { useIdentity } from './provider';
-import {
-  Brand,
-  Timer,
-  Connection,
-  ErrorMessage,
-  Loading,
-  StickerArt,
-  StickerImage,
-  useNow,
-} from './ui';
+import { Brand, Timer, Connection, ErrorMessage, Loading, StickerImage, useNow } from './ui';
 import { ActivityPrompts } from './activity-prompts';
 import { UploadPanel } from './upload';
 import { Gallery } from './wall';
@@ -68,7 +59,7 @@ export function WorkshopView({ id, projector = false }: { id: string; projector?
         if (e.code === 'permission-denied') {
           setClosed(true);
           clearWorkshopDraft(id);
-        } else setError('Could not connect. Check your connection and retry.');
+        } else setError('Tidak dapat bersambung. Semak internet anda dan cuba semula.');
       },
     );
   }, [user, id]);
@@ -84,13 +75,10 @@ export function WorkshopView({ id, projector = false }: { id: string; projector?
       <CleanupStatus id={id} />
     ) : (
       <main className="center-message">
-        <h1>This workshop has ended</h1>
-        <p>
-          Ask your facilitator to delete its temporary data and provide the next workshop’s new
-          code.
-        </p>
+        <h1>Bengkel ini telah tamat</h1>
+        <p>Minta fasilitator memadam data sementara sesi ini dan berkongsi kod sesi baharu.</p>
         <Link className="button primary" href="/">
-          Join another workshop
+          Sertai Bengkel Lain
         </Link>
       </main>
     );
@@ -99,17 +87,17 @@ export function WorkshopView({ id, projector = false }: { id: string; projector?
       <main className="center-message">
         <ErrorMessage message={error || authError} />
         <Link href="/" className="button secondary">
-          Back to join
+          Kembali ke Masuk Sesi
         </Link>
       </main>
     );
   if (!user)
     return (
       <main className="center-message">
-        <h1>Your creative room is waiting.</h1>
-        <p>Join with your workshop code to continue.</p>
+        <h1>Ruang kreatif anda menanti.</h1>
+        <p>Masukkan kod sesi untuk meneruskan.</p>
         <Link href="/" className="button primary">
-          Join the workshop
+          Masuk Bengkel
         </Link>
       </main>
     );
@@ -117,8 +105,8 @@ export function WorkshopView({ id, projector = false }: { id: string; projector?
   if (projector && session.hostId !== user.uid)
     return (
       <main className="center-message">
-        <h1>Facilitator access required.</h1>
-        <Link href="/facilitator">Open facilitator studio</Link>
+        <h1>Akses fasilitator diperlukan.</h1>
+        <Link href="/facilitator">Buka Ruang Fasilitator</Link>
       </main>
     );
   return <Room session={session} host={session.hostId === user.uid} projector={projector} />;
@@ -153,7 +141,7 @@ function Room({
           setVotesCast(snapshot.docs.filter((d) => d.data().voted).length);
           setSubmittedCount(snapshot.docs.filter((d) => d.data().submitted).length);
         },
-        () => setError('Attendance could not be loaded. Please refresh.'),
+        () => setError('Senarai kehadiran tidak dapat dimuatkan. Sila muat semula.'),
       ),
     [session.id],
   );
@@ -172,7 +160,7 @@ function Room({
         setSubmissions(
           s.docs.map((d) => d.data() as Submission).sort((a, b) => a.createdAt - b.createdAt),
         ),
-      () => setError('The gallery connection was interrupted. Please refresh.'),
+      () => setError('Sambungan galeri terganggu. Sila muat semula.'),
     );
   }, [host, session.id]);
   useEffect(() => {
@@ -180,17 +168,17 @@ function Room({
       return onSnapshot(
         collection(db, 'sessions', session.id, 'members'),
         (s) => setMembers(s.docs.map((d) => d.data() as Member)),
-        () => setError('Progress could not be loaded.'),
+        () => setError('Kemajuan peserta tidak dapat dimuatkan.'),
       );
     const off = onSnapshot(
       doc(db, 'sessions', session.id, 'submissions', user!.uid),
       (s) => setOwn(s.exists() ? (s.data() as Submission) : null),
-      () => setError('Your submission could not be loaded.'),
+      () => setError('Penghantaran anda tidak dapat dimuatkan.'),
     );
     const offVote = onSnapshot(
       doc(db, 'sessions', session.id, 'votes', user!.uid),
       (s) => setVote(s.data()?.submissionId ?? null),
-      () => setError('Your vote status could not be loaded.'),
+      () => setError('Status undian anda tidak dapat dimuatkan.'),
     );
     return () => {
       off();
@@ -233,10 +221,10 @@ function Room({
           <Connection />
         </div>
         <span className="room-code">
-          ROOM <b>{session.code}</b>
+          KOD <b>{session.code}</b>
         </span>
       </header>
-      <section className="stage-strip" tabIndex={0} aria-label="Workshop stages">
+      <section className="stage-strip" tabIndex={0} aria-label="Peringkat bengkel">
         {STAGES.map((stage, i) => (
           <span
             key={stage}
@@ -246,7 +234,7 @@ function Room({
             }
           >
             <b>{STAGES.indexOf(session.stage) > i ? <Check size={12} /> : i + 1}</b>
-            {['Welcome', 'Your prompt', 'Create', 'Submit', 'Gallery', 'Vote', 'Celebrate'][i]}
+            {['Mula', 'Prompt anda', 'Cipta', 'Hantar', 'Galeri', 'Undi', 'Raikan'][i]}
           </span>
         ))}
       </section>
@@ -254,12 +242,12 @@ function Room({
         <div className="stage-heading">
           <div>
             <span className="eyebrow">
-              {host ? 'FACILITATOR DASHBOARD' : 'YOUR CREATIVE PLAYGROUND'} · WOW #1
+              {host ? 'DASHBOARD FASILITATOR' : 'RUANG KREATIF ANDA'} · Wow Mean!
             </span>
             <h1>
               {!host && session.activity && isActivityStage(session.stage)
                 ? session.activity.title
-                : STAGE_INFO[session.stage].title}
+                : STAGE_COPY[session.stage].title}
               <span className="coral-dot">.</span>
             </h1>
             <p
@@ -271,7 +259,7 @@ function Room({
             >
               {!host && session.activity && isActivityStage(session.stage)
                 ? session.activity.description
-                : STAGE_INFO[session.stage].hint}
+                : STAGE_COPY[session.stage].hint}
             </p>
           </div>
           {session.stage !== 'results' && (
@@ -280,7 +268,7 @@ function Room({
                 <Clock size={12} />{' '}
                 {session.activity && isActivityStage(session.stage)
                   ? 'MASA AKTIVITI BERBAKI'
-                  : 'TIME FOR THIS STAGE'}
+                  : 'MASA PERINGKAT BERBAKI'}
               </small>
               <Timer end={session.stageEndsAt} pausedRemainingMs={session.pausedRemainingMs} />
             </div>
@@ -288,21 +276,21 @@ function Room({
         </div>
         <div className="live-stage-bar">
           <span>
-            {session.pausedRemainingMs != null ? 'Paused · ' : ''}
-            {STAGE_INFO[session.stage].title}
+            {session.pausedRemainingMs != null ? 'Dijeda · ' : ''}
+            {STAGE_COPY[session.stage].title}
           </span>
           <Timer end={session.stageEndsAt} pausedRemainingMs={session.pausedRemainingMs} />
           <Connection />
           {!host && own?.status === 'rejected' && (
             <a className="submission-feedback-link" href="#upload-sticker">
-              Sticker returned · View feedback
+              Karya dipulangkan · Lihat maklum balas
             </a>
           )}
         </div>
         {session.pausedRemainingMs != null && (
           <p className="notice" role="status">
-            Workshop paused. Uploads and voting will resume when your facilitator restarts the
-            clock.
+            Bengkel dijeda. Penghantaran dan undian akan disambung apabila fasilitator memulakan
+            semula pemasa.
           </p>
         )}
         <ErrorMessage message={error} />
@@ -348,23 +336,23 @@ function Room({
             {session.stage === 'lobby' && !session.activity && (
               <div className="welcome-panel">
                 <div>
-                  <span className="pill">YOU’RE IN. LET’S GET CREATIVE.</span>
+                  <span className="pill">ANDA SUDAH MASUK. JOM BERKARYA!</span>
                   <h2>
-                    A sticker only
+                    Satu karya yang
                     <br />
-                    <em>you could imagine.</em>
+                    <em>mencerminkan idea anda.</em>
                   </h2>
                   <p>
-                    Your facilitator will kick things off shortly. You’ll choose a caption, create
-                    with your own AI account, and share your finished sticker with the room.
+                    Fasilitator akan memulakan aktiviti sebentar lagi. Pilih kapsyen, cipta
+                    menggunakan akaun AI sendiri dan kongsi hasil anda di sini.
                   </p>
                   <div className="notice">
-                    Have ChatGPT, Gemini, or your preferred image tool ready. No selfies needed—use
-                    an original fictional character.
+                    Sediakan ChatGPT, Gemini atau aplikasi AI pilihan anda. Gunakan karakter rekaan;
+                    gambar swafoto tidak diperlukan.
                   </div>
                   <Connection />
                 </div>
-                <StickerArt kind="sun" />
+                <Sparkles className="workshop-spark" size={80} aria-hidden="true" />
               </div>
             )}
             {session.activity ? (
@@ -383,9 +371,9 @@ function Room({
                 <div className="gallery-banner" role="status">
                   {session.stage === 'vote'
                     ? vote
-                      ? 'Your vote is in. Thanks for cheering on another creator!'
-                      : 'One final vote. Enlarge a sticker to inspect it, then choose your favorite.'
-                    : 'Explore the Live Sticker Wall. Voting opens when your facilitator is ready.'}
+                      ? 'Undian anda telah dikira. Terima kasih kerana meraikan karya peserta lain!'
+                      : 'Anda mempunyai satu undian sahaja. Besarkan gambar dan pilih karya kegemaran anda.'
+                    : 'Terokai Galeri Karya. Fasilitator akan membuka undian apabila semua bersedia.'}
                 </div>
                 <Gallery
                   submissions={approved}
@@ -401,7 +389,7 @@ function Room({
         )}
       </main>
       <footer className="room-footer">
-        WOW #1 <span>Made by teachers. Celebrated together.</span>
+        Wow Mean! <span>Cipta bersama. Raikan bersama.</span>
         <Connection />
       </footer>
     </>
@@ -420,8 +408,8 @@ function JoinPanel({ session, url }: { session: Workshop; url: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <section className="panel join-panel">
-      <span className="eyebrow">MORE IDEAS WELCOME</span>
-      <h3>Scan. Join. Create.</h3>
+      <span className="eyebrow">JOM SERTAI BENGKEL</span>
+      <h3>Imbas. Masuk. Cipta.</h3>
       {url && (
         <div className="qr">
           <QRCodeSVG
@@ -429,11 +417,11 @@ function JoinPanel({ session, url }: { session: Workshop; url: string }) {
             size={160}
             level="M"
             marginSize={1}
-            title={`Join workshop ${session.code}`}
+            title={`Sertai bengkel ${session.code}`}
           />
         </div>
       )}
-      <p>Or enter the session code</p>
+      <p>Atau masukkan kod sesi</p>
       <div className="big-code">{session.code}</div>
       <button
         className="text-button"
@@ -447,7 +435,7 @@ function JoinPanel({ session, url }: { session: Workshop; url: string }) {
           }
         }}
       >
-        <Copy size={14} /> {copied ? 'Link copied!' : 'Copy invitation link'}
+        <Copy size={14} /> {copied ? 'Pautan disalin!' : 'Salin Pautan Jemputan'}
       </button>
     </section>
   );
@@ -493,7 +481,7 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
       setTimeout(() => setCopied(false), 2500);
     } catch {
       setCopyError(
-        'Could not copy automatically. Use Select prompt below, then your device’s Copy command.',
+        'Salinan automatik gagal. Tekan Pilih Prompt, kemudian gunakan arahan Salin pada peranti anda.',
       );
     }
   }
@@ -501,26 +489,26 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
     <div className="lab-grid">
       <div className="mobile-task-actions">
         <button className="button primary" disabled={!caption.trim()} onClick={copy}>
-          {copied ? 'Copied. Open your AI tool' : 'Copy prompt'}
+          {copied ? 'Disalin! Buka aplikasi AI' : 'Salin Prompt'}
         </button>
         <a
           className="button secondary"
           href={session.stage === 'prompt' ? '#ai-tools' : '#upload-sticker'}
         >
-          {session.stage === 'prompt' ? 'Open AI tool' : 'Upload sticker'}
+          {session.stage === 'prompt' ? 'Buka Aplikasi AI' : 'Muat Naik Karya'}
         </a>
-        <span role="status">{copied ? 'Prompt copied to clipboard.' : ''}</span>
-        {copyError && <a href="#copy-help">Copy needs your help — select prompt</a>}
+        <span role="status">{copied ? 'Prompt berjaya disalin.' : ''}</span>
+        {copyError && <a href="#copy-help">Salinan gagal — pilih teks prompt</a>}
       </div>
       <div>
         <section className="panel lab-panel">
           <div className="section-label">
             <h2>
-              <span className="number">01</span> Find your words
+              <span className="number">01</span> Pilih kapsyen anda
             </h2>
-            <small>A LITTLE PERSONALITY GOES A LONG WAY</small>
+            <small>TAMBAH SENTUHAN ANDA</small>
           </div>
-          <div className="collection-tabs" role="group" aria-label="Caption collections">
+          <div className="collection-tabs" role="group" aria-label="Koleksi kapsyen">
             {COLLECTIONS.map((c) => (
               <button
                 key={c.id}
@@ -532,11 +520,11 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
                 }}
               >
                 <span>{c.emoji}</span>
-                {c.name}
+                {COLLECTION_COPY[c.id].name}
               </button>
             ))}
           </div>
-          <p>{selected.description}</p>
+          <p>{COLLECTION_COPY[selected.id].description}</p>
           <div className="caption-options">
             {selected.captions.map((c) => (
               <button
@@ -550,18 +538,18 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
             ))}
           </div>
           <label>
-            Make it yours <span>{caption.length}/120</span>
+            Ubah kapsyen anda <span>{caption.length}/120</span>
             <input
               maxLength={120}
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              placeholder="Your sticker’s words…"
+              placeholder="Kapsyen untuk karya anda…"
             />
           </label>
         </section>
         <section className="panel lab-panel">
           <h2>
-            <span className="number">02</span> Give it a personality
+            <span className="number">02</span> Pilih gaya anda
           </h2>
           <div className="style-options">
             {STYLES.map((s) => (
@@ -572,39 +560,37 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
                 key={s.id}
               >
                 <span>{s.emoji}</span>
-                {s.name}
+                {STYLE_COPY[s.id]}
                 {style === s.id && <Check size={14} />}
               </button>
             ))}
           </div>
           <label>
-            Your fictional character
+            Karakter rekaan anda
             <input
               maxLength={100}
               value={character}
               onChange={(e) => setCharacter(e.target.value)}
-              placeholder="A coffee-loving owl in teacher glasses"
+              placeholder="Burung hantu berkaca mata yang gemar kopi"
             />
           </label>
           <p className="fine-print">
-            Think mascots, animals, or imaginary teachers. Keep real people and student information
-            out of your prompt.
+            Pilih maskot, haiwan atau guru rekaan. Jangan masukkan identiti sebenar atau maklumat
+            murid dalam prompt.
           </p>
         </section>
       </div>
       <aside>
         <section className="panel prompt-panel">
           <span className="eyebrow">
-            <Sparkles size={14} /> YOUR IDEA, READY TO GO
+            <Sparkles size={14} /> IDEA ANDA SEDIA DIGUNAKAN
           </span>
-          <h2>The magic starts here.</h2>
+          <h2>Kreativiti bermula di sini.</h2>
           <div className="prompt-preview">
-            <span className="pill">
-              {STYLES.find((s) => s.id === style)?.name} · ORIGINAL CHARACTER
-            </span>
-            <blockquote>“{caption || 'Your words go here'}”</blockquote>
+            <span className="pill">{STYLE_COPY[style]} · KARAKTER REKAAN</span>
+            <blockquote>“{caption || 'Kapsyen anda di sini'}”</blockquote>
           </div>
-          <label htmlFor="generated-prompt">Your AI image prompt</label>
+          <label htmlFor="generated-prompt">Prompt gambar AI anda</label>
           <textarea
             id="generated-prompt"
             className="generated-prompt"
@@ -614,7 +600,7 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
           />
           <button className="button primary full" onClick={copy} disabled={!caption.trim()}>
             <Copy size={17} />
-            {copied ? 'Copied. Go make your WOW!' : 'Copy my prompt'}
+            {copied ? 'Disalin! Jom cipta karya anda' : 'Salin Prompt Saya'}
           </button>
           <div id="copy-help">
             <ErrorMessage message={copyError} />
@@ -627,21 +613,20 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
                   input.select();
                 }}
               >
-                Select prompt
+                Pilih Prompt
               </button>
             )}
           </div>
           <p className="sr-only" role="status">
-            {copied ? 'Prompt copied to clipboard.' : ''}
+            {copied ? 'Prompt berjaya disalin.' : ''}
           </p>
           <div className="external-tools" id="ai-tools">
-            <h3>Your next three steps</h3>
+            <h3>Tiga langkah seterusnya</h3>
             <ol>
-              <li>Open a tool below and sign in to your own account.</li>
-              <li>Paste your copied prompt and ask it to create the image.</li>
+              <li>Buka aplikasi di bawah dan log masuk ke akaun anda sendiri.</li>
+              <li>Tampal prompt yang disalin dan minta AI menghasilkan gambar.</li>
               <li>
-                Download/save the finished image. Return to this workshop tab and choose Upload
-                sticker.
+                Simpan gambar yang siap. Kembali ke tab bengkel ini dan pilih Muat Naik Karya.
               </li>
             </ol>
             <div>
@@ -667,10 +652,10 @@ function PromptLab({ session, own }: { session: Workshop; own: Submission | null
               ))}
             </div>
             <p>
-              On a phone, use the AI tool’s Download or Save image option, then choose the saved
-              image from Photos or Files here. If your account cannot create images, ask your
-              facilitator for help or an example to customize. Keep this workshop tab open; your
-              caption and style are saved.
+              Pada telefon, pilih Download atau Save Image dalam aplikasi AI. Kemudian pilih gambar
+              daripada Foto atau Fail di sini. Jika akaun anda tidak boleh menghasilkan gambar,
+              minta bantuan fasilitator. Biarkan tab bengkel ini terbuka; kapsyen dan gaya anda
+              disimpan.
             </p>
           </div>
         </section>
@@ -711,16 +696,16 @@ function Results({ session, projector = false }: { session: Workshop; projector?
         ))}
       </div>
       <span className="eyebrow">
-        <Trophy size={18} /> THE ROOM HAS SPOKEN
+        <Trophy size={18} /> INILAH PILIHAN KITA
       </span>
       <h2>
-        Small stickers.
+        Idea anda.
         <br />
-        <em>Huge applause.</em>
+        <em>Tepukan untuk semua!</em>
       </h2>
       <p>
-        {session.totalVotes || 0} votes. {session.participantCount} creative minds. A whole lot of
-        WOW.
+        {session.totalVotes || 0} undian. {session.participantCount} peserta kreatif. Tepukan untuk
+        semua!
       </p>
       {session.winners?.length ? (
         <div className="podium">
@@ -730,51 +715,51 @@ function Results({ session, projector = false }: { session: Workshop; projector?
                 {w.rank === 1 ? '★' : w.rank}{' '}
                 <span>
                   {w.rank === 1
-                    ? 'THE BIG WOW'
+                    ? 'PILIHAN UTAMA'
                     : w.rank === 2
-                      ? 'CROWD FAVORITE'
-                      : 'CREATIVE SPARK'}
+                      ? 'KEGEMARAN RAMAI'
+                      : 'IDEA KREATIF'}
                 </span>
               </div>
               <img
                 src={`/api/image?sessionId=${session.id}&submissionId=${w.id}`}
-                alt={`Winning sticker by ${w.nickname}`}
+                alt={`Karya pemenang oleh ${w.nickname}`}
               />
               <h3>{w.nickname}</h3>
               <p>
-                {w.votes} {w.votes === 1 ? 'vote' : 'votes'} · Rank {w.rank}
+                {w.votes} undian · Kedudukan {w.rank}
               </p>
             </article>
           ))}
         </div>
       ) : (
         <div className="panel">
-          <h3>Every creator gets a moment.</h3>
-          <p>No votes were cast this time. Celebrate all the ideas you made together!</p>
+          <h3>Setiap karya diraikan.</h3>
+          <p>Tiada undian direkodkan. Kita tetap raikan semua idea yang dikongsi bersama!</p>
         </div>
       )}
       {projector && pages > 1 && (
-        <div className="winner-pages" aria-label="Tied winner pages">
+        <div className="winner-pages" aria-label="Halaman pemenang seri">
           <button className="button secondary" onClick={() => setCycling((value) => !value)}>
-            {cycling ? 'Pause winner pages' : 'Play winner pages'}
+            {cycling ? 'Jeda Paparan Pemenang' : 'Sambung Paparan Pemenang'}
           </button>
           <button
             className="button secondary"
             onClick={() => setPage((p) => (p - 1 + pages) % pages)}
           >
-            Previous winners
+            Pemenang Sebelum
           </button>
           <span>
-            Including all ties · {page + 1} / {pages} ·{' '}
-            {cycling ? 'changes every 8 seconds' : 'paused'}
+            Termasuk semua keputusan seri · {page + 1} / {pages} ·{' '}
+            {cycling ? 'bertukar setiap 8 saat' : 'dijeda'}
           </span>
           <button className="button secondary" onClick={() => setPage((p) => (p + 1) % pages)}>
-            Next winners
+            Pemenang Seterusnya
           </button>
         </div>
       )}
       <div className="results-note">
-        Take this creativity back to your classroom. <Heart size={17} />
+        Bawa inspirasi ini ke bilik darjah anda. <Heart size={17} />
       </div>
     </section>
   );
@@ -796,7 +781,7 @@ function Projector({
         <Brand />
         <Connection />
         <span className="room-code">
-          JOIN <b>{session.code}</b>
+          SERTAI <b>{session.code}</b>
         </span>
       </header>
       {session.stage === 'results' ? (
@@ -805,15 +790,15 @@ function Projector({
         <>
           <div className="projector-heading">
             <div>
-              <span className="eyebrow">WOW #1 · THE TEACHER STICKER LAB</span>
+              <span className="eyebrow">Wow Mean! · Cipta | Kongsi | Undi</span>
               <h1>
-                {STAGE_INFO[session.stage].title}
+                {STAGE_COPY[session.stage].title}
                 <span className="coral-dot">.</span>
               </h1>
-              <p>{STAGE_INFO[session.stage].hint}</p>
+              <p>{STAGE_COPY[session.stage].hint}</p>
             </div>
             <div>
-              {session.pausedRemainingMs != null && <strong>PAUSED</strong>}
+              {session.pausedRemainingMs != null && <strong>DIJEDA</strong>}
               <Timer
                 end={session.stageEndsAt}
                 pausedRemainingMs={session.pausedRemainingMs}
@@ -827,13 +812,13 @@ function Projector({
                 <Gallery submissions={approved} session={session} host projector />
               ) : (
                 <>
-                  <StickerArt kind="sun" />
+                  <Sparkles className="workshop-spark" size={80} aria-hidden="true" />
                   <h2>
                     {session.stage === 'lobby'
-                      ? 'Your next great idea starts here.'
-                      : 'Good things are being created.'}
+                      ? 'Idea hebat anda bermula di sini.'
+                      : 'Idea menarik sedang dihasilkan.'}
                   </h2>
-                  <p>{session.participantCount} teachers in the room. So much possibility.</p>
+                  <p>{session.participantCount} peserta. Begitu banyak idea untuk dikongsi.</p>
                 </>
               )}
             </div>
@@ -841,13 +826,12 @@ function Projector({
           </div>
           <footer>
             <span>
-              {session.participantCount} JOINED · {approved.length} APPROVED · {votesCast} VOTES
-              CAST
+              {session.participantCount} PESERTA · {approved.length} DILULUSKAN · {votesCast} UNDIAN
             </span>
             <span>
               {session.stage === 'vote'
-                ? 'ONE PERSON. ONE VOTE. SHARE THE LOVE.'
-                : 'BIG IDEAS. TINY STICKERS. THAT’S YOUR WOW.'}
+                ? 'SATU PESERTA. SATU UNDIAN. RAIKAN KARYA BERSAMA.'
+                : 'Cipta | Kongsi | Undi'}
             </span>
           </footer>
         </>

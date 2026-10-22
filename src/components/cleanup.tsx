@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase';
+import { mesejMelayu } from '@/lib/bahasa';
 import { Modal } from './modal';
 import { ErrorMessage } from './ui';
 
@@ -50,11 +51,11 @@ export function EndSession({ id, title }: { id: string; title: string }) {
           }}
         >
           <p>
-            <strong>{title}</strong> will close immediately. This session’s temporary participant
-            accounts, stickers, votes and results will be permanently deleted. This cannot be
-            undone.
+            <strong>{title}</strong> akan ditutup serta-merta. Semua akaun peserta sementara, karya,
+            undian dan keputusan sesi ini akan dipadam secara kekal. Tindakan ini tidak boleh
+            dibatalkan. Templat aktiviti dan akaun fasilitator dikekalkan.
           </p>
-          <p>Wait for Cleanup Complete before closing the facilitator screen.</p>
+          <p>Tunggu sehingga Pemadaman Selesai disahkan sebelum menutup paparan fasilitator.</p>
           <ErrorMessage message={error} />
           <div className="two-buttons">
             <button
@@ -63,7 +64,7 @@ export function EndSession({ id, title }: { id: string; title: string }) {
               disabled={busy}
               onClick={() => setConfirm(false)}
             >
-              Keep workshop open
+              Batal, Kekalkan Bengkel
             </button>
             <button
               className="button primary"
@@ -82,7 +83,7 @@ export function EndSession({ id, title }: { id: string; title: string }) {
                 }
               }}
             >
-              {busy ? 'Closing…' : 'Ya, padam semua data'}
+              {busy ? 'Menutup sesi…' : 'Ya, padam semua data'}
             </button>
           </div>
         </Modal>
@@ -92,7 +93,7 @@ export function EndSession({ id, title }: { id: string; title: string }) {
 }
 export function CleanupStatus({ id }: { id: string }) {
   const [state, setState] = useState('checking');
-  const [title, setTitle] = useState('Workshop');
+  const [title, setTitle] = useState('Bengkel');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -132,19 +133,19 @@ export function CleanupStatus({ id }: { id: string }) {
     <main className="center-message">
       <h1 aria-live="polite">
         {state === 'complete'
-          ? 'Cleanup Complete'
+          ? 'Pemadaman Selesai'
           : state === 'awaiting-confirmation'
-            ? 'Manual deletion required'
+            ? 'Pengesahan Pemadaman Diperlukan'
             : state === 'failed'
-              ? 'Cleanup failed'
-              : 'Workshop closed'}
+              ? 'Pemadaman Gagal'
+              : 'Bengkel Ditutup'}
       </h1>
       <p>
         {state === 'complete'
-          ? 'Deletion of this workshop’s platform data has been verified.'
+          ? 'Semua data sesi bengkel dalam platform ini telah disahkan dipadam.'
           : state === 'awaiting-confirmation'
-            ? 'This workshop has expired. Its data remains until you confirm deletion below.'
-            : 'Joining, uploads and voting are closed. Deletion is not yet verified. No automatic cleanup runs; use retry if needed.'}
+            ? 'Sesi bengkel telah tamat tempoh. Data kekal sehingga anda mengesahkan pemadaman di bawah.'
+            : 'Kemasukan, penghantaran dan undian telah ditutup. Pemadaman belum disahkan. Tiada pemadaman automatik; cuba semula jika perlu.'}
       </p>
       <ErrorMessage message={error} />
       {state === 'awaiting-confirmation' && <EndSession id={id} title={title} />}
@@ -167,14 +168,14 @@ export function CleanupStatus({ id }: { id: string }) {
           }}
         >
           {busy
-            ? 'Verifying deletion…'
+            ? 'Mengesahkan pemadaman…'
             : state === 'failed'
-              ? 'Retry cleanup'
-              : 'Run cleanup & verify'}
+              ? 'Cuba Padam Semula'
+              : 'Padam & Sahkan'}
         </button>
       )}
       <Link className="button secondary" href="/facilitator">
-        Create a new workshop
+        Cipta Bengkel Baharu
       </Link>
     </main>
   );
@@ -213,20 +214,21 @@ export function PendingCleanups() {
     };
   }, []);
   return (
-    <section className="pending-cleanups" aria-label="Unfinished workshop cleanup">
+    <section className="pending-cleanups" aria-label="Pemadaman bengkel tertangguh">
       <ErrorMessage message={error} />
       {workshops.length > 0 && (
         <>
-          <h2>Workshops awaiting manual deletion</h2>
+          <h2>Bengkel Menunggu Pemadaman</h2>
           <p>
-            Data stays until you confirm Padam Semua Data Bengkel. There is no automatic cleanup.
+            Data kekal sehingga anda mengesahkan Padam Semua Data Bengkel. Tiada pemadaman
+            automatik.
           </p>
           {workshops.map((room) => (
             <div className="panel" key={room.id}>
               <h3>{room.title}</h3>
-              <p>{room.expired ? 'Expired · manual deletion required' : 'Open workshop'}</p>
+              <p>{room.expired ? 'Tamat tempoh · perlu pemadaman manual' : 'Bengkel aktif'}</p>
               <Link className="button secondary" href={`/session/${room.id}`}>
-                Open workshop / delete data
+                Buka Bengkel / Padam Data
               </Link>
             </div>
           ))}
@@ -234,16 +236,16 @@ export function PendingCleanups() {
       )}
       {jobs.length > 0 && (
         <>
-          <h2>Unfinished cleanup</h2>
-          <p>These workshops are closed. Their deletion has not yet been verified.</p>
+          <h2>Pemadaman Tertangguh</h2>
+          <p>Bengkel ini telah ditutup. Pemadaman datanya belum disahkan.</p>
         </>
       )}
       {jobs.map((job) => (
         <div key={job.id} className="panel">
-          <h3>{job.state === 'failed' ? 'Cleanup failed' : 'Cleanup in progress'}</h3>
-          {job.error && <p>{job.error}</p>}
+          <h3>{job.state === 'failed' ? 'Pemadaman Gagal' : 'Pemadaman Sedang Berjalan'}</h3>
+          {job.error && <p>{mesejMelayu(job.error)}</p>}
           <Link className="button secondary" href={`/session/${job.id}`}>
-            Review cleanup
+            Semak Pemadaman
           </Link>
         </div>
       ))}

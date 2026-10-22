@@ -42,52 +42,49 @@ export function Gallery({
   );
   const canVote = acceptingVotes(session, now + offset) && !vote && !busy;
   return (
-    <section
-      className={`live-wall ${projector ? 'projector-wall' : ''}`}
-      aria-label="Live Sticker Wall"
-    >
+    <section className={`live-wall ${projector ? 'projector-wall' : ''}`} aria-label="Galeri Karya">
       <div className="wall-toolbar">
         <h2>
-          Live Sticker Wall <span className="count-badge">{submissions.length}</span>
+          Galeri Karya <span className="count-badge">{submissions.length}</span>
         </h2>
         {!projector && (
           <label>
-            Find a teacher or caption
+            Cari peserta atau kapsyen
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search the wall"
+              placeholder="Cari dalam galeri"
             />
           </label>
         )}
         <p>
           {projector
-            ? 'Every creator. One room full of ideas.'
-            : `${visible.length} of ${submissions.length} stickers · tap any image to take a closer look`}
+            ? 'Setiap karya, satu inspirasi.'
+            : `${visible.length} daripada ${submissions.length} karya · tekan gambar untuk besarkan`}
         </p>
       </div>
       {!submissions.length ? (
         <div className="empty">
-          <h3>A gallery full of possibility.</h3>
-          <p>Approved stickers will appear here live.</p>
+          <h3>Galeri menanti karya anda.</h3>
+          <p>Karya yang diluluskan akan muncul di sini secara langsung.</p>
         </div>
       ) : !visible.length ? (
-        <p role="status">No matching stickers. Try another name or clear your search.</p>
+        <p role="status">Tiada karya sepadan. Cuba nama lain atau kosongkan carian.</p>
       ) : (
         <div className="gallery-grid wall-grid">
           {visible.map((s) => (
             <article className="gallery-card" key={s.id}>
               <button
                 className="wall-image-button"
-                aria-label={`Enlarge sticker by ${s.nickname}`}
+                aria-label={`Besarkan karya ${s.nickname}`}
                 onClick={() => setPreview(s)}
               >
                 <StickerImage sessionId={session.id} sub={s} />
               </button>
               <h3>
                 {s.nickname}
-                {s.id === user?.uid ? ' (you)' : ''}
+                {s.id === user?.uid ? ' (anda)' : ''}
               </h3>
               {!projector && <p className="wall-caption">{s.caption}</p>}
               <DownloadArtwork sessionId={session.id} submission={s} compact={projector} />
@@ -98,17 +95,17 @@ export function Gallery({
                   onClick={() => setSelected(s)}
                 >
                   {vote === s.id
-                    ? 'Your vote is counted'
+                    ? 'Undian anda dikira'
                     : s.id === user?.uid
-                      ? 'Your creation'
+                      ? 'Karya anda'
                       : vote
-                        ? 'Voting complete'
-                        : 'This is my favorite'}
+                        ? 'Undian selesai'
+                        : 'Undi Karya Ini'}
                 </button>
               )}
               {host && !projector && !['vote', 'results'].includes(session.stage) && (
                 <button className="text-button" disabled={busy} onClick={() => onRemove?.(s.id)}>
-                  Return to creator
+                  Pulangkan kepada Peserta
                 </button>
               )}
             </article>
@@ -116,13 +113,13 @@ export function Gallery({
         </div>
       )}
       {preview && (
-        <Modal title={`A closer look · ${preview.nickname}`} onClose={() => setPreview(null)}>
+        <Modal title={`Lihat karya · ${preview.nickname}`} onClose={() => setPreview(null)}>
           <StickerImage sessionId={session.id} sub={preview} />
           <p>{preview.caption}</p>
           <DownloadArtwork sessionId={session.id} submission={preview} />
           <div className="two-buttons">
             <button autoFocus className="button secondary" onClick={() => setPreview(null)}>
-              Back to wall
+              Kembali ke Galeri
             </button>
             {!host && !projector && session.stage === 'vote' && (
               <button
@@ -133,23 +130,23 @@ export function Gallery({
                   setPreview(null);
                 }}
               >
-                Choose this sticker
+                Pilih Karya Ini
               </button>
             )}
           </div>
         </Modal>
       )}
       {selected && (
-        <Modal title="Give this WOW your vote?" onClose={() => setSelected(null)}>
+        <Modal title="Undi karya ini?" onClose={() => setSelected(null)}>
           <StickerImage sessionId={session.id} sub={selected} />
           <h3>{selected.nickname}</h3>
-          <p>You get one vote, and it’s final. Check your choice before confirming.</p>
+          <p>Anda hanya boleh mengundi sekali. Semak pilihan sebelum mengesahkan.</p>
           {!canVote && !vote && (
-            <p role="status">Voting is paused or closed. Wait for your facilitator.</p>
+            <p role="status">Undian dijeda atau ditutup. Tunggu arahan fasilitator.</p>
           )}
           <div className="two-buttons">
             <button autoFocus className="button secondary" onClick={() => setSelected(null)}>
-              Keep looking
+              Lihat Karya Lain
             </button>
             <button
               className="button primary"
@@ -159,7 +156,7 @@ export function Gallery({
                 setSelected(null);
               }}
             >
-              Cast my vote
+              Sahkan Undian
             </button>
           </div>
         </Modal>

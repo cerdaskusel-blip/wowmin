@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { auth } from '@/lib/firebase';
+import { mesejMelayu } from '@/lib/bahasa';
 import { acceptingSubmissions, Submission, Workshop } from '@/lib/workshop';
 import { ErrorMessage, StickerImage, useNow } from './ui';
 import { useIdentity } from './provider';
@@ -55,7 +56,7 @@ export function UploadPanel({ session, own }: { session: Workshop; own: Submissi
       if (input.current) input.current.value = '';
     } catch (e) {
       setError(
-        `${e instanceof Error ? e.message : 'Upload failed.'} Your selected image is still here. If submissions are closed, ask your facilitator to reopen them before voting.`,
+        `${e instanceof Error ? mesejMelayu(e.message) : 'Muat naik gagal.'} Gambar pilihan anda masih di sini. Jika penghantaran ditutup, minta fasilitator membukanya semula sebelum undian.`,
       );
     } finally {
       setBusy(false);
@@ -66,21 +67,21 @@ export function UploadPanel({ session, own }: { session: Workshop; own: Submissi
     return null;
   return (
     <section id="upload-sticker" className="panel upload-panel" aria-labelledby="upload-title">
-      <h2 id="upload-title">Your sticker · bring it back</h2>
+      <h2 id="upload-title">Hantar Karya Anda</h2>
       {own && (
         <div className={`submission-status ${own.status}`} role="status">
           <StickerImage sessionId={session.id} sub={own} />
           <b>
             {own.status === 'approved'
-              ? 'You’re in the showcase!'
+              ? 'Karya anda ada di galeri!'
               : own.status === 'pending'
-                ? 'Sent! Your facilitator is taking a look.'
-                : 'Let’s give it another try.'}
+                ? 'Berjaya dihantar! Fasilitator sedang menyemak.'
+                : 'Karya dipulangkan. Jom cuba semula.'}
           </b>
           <p>
             {own.status === 'rejected'
-              ? own.reason
-              : 'Your finished sticker is safely in the workshop.'}
+              ? mesejMelayu(own.reason || '')
+              : 'Karya anda telah disimpan dalam sesi bengkel.'}
           </p>
         </div>
       )}
@@ -92,20 +93,20 @@ export function UploadPanel({ session, own }: { session: Workshop; own: Submissi
           {!open && (
             <p className="notice" role="status">
               {session.pausedRemainingMs != null
-                ? 'Workshop paused. Your image is safe here; sending resumes with the workshop.'
+                ? 'Bengkel dijeda. Gambar pilihan anda masih di sini; penghantaran boleh disambung nanti.'
                 : ['vote', 'results'].includes(session.stage)
-                  ? 'Submissions are closed for this workshop. Your image stays on your device.'
-                  : 'Submissions are closed. Ask your facilitator to extend time or reopen Submit before voting.'}
+                  ? 'Penghantaran bengkel ini telah ditutup. Gambar anda kekal pada peranti sendiri.'
+                  : 'Penghantaran ditutup. Minta fasilitator menambah masa atau membuka semula penghantaran sebelum undian.'}
             </p>
           )}
           <label className="upload-zone">
-            <b>{file ? 'Replace selected image' : 'Choose your finished sticker'}</b>
-            <span>PNG, JPG or WebP · up to 5 MB</span>
+            <b>{file ? 'Tukar Gambar Pilihan' : 'Pilih Gambar Karya Anda'}</b>
+            <span>PNG, JPG atau WebP · sehingga 5 MB</span>
             <input
               ref={input}
               type="file"
               accept="image/png,image/jpeg,image/webp"
-              aria-label="Finished sticker image"
+              aria-label="Gambar karya siap"
               disabled={busy}
               onChange={(e) => {
                 const next = e.target.files?.[0];
@@ -114,7 +115,7 @@ export function UploadPanel({ session, own }: { session: Workshop; own: Submissi
                   next.size > 5 * 1024 * 1024 ||
                   !['image/png', 'image/jpeg', 'image/webp'].includes(next.type)
                 ) {
-                  setError('Choose a PNG, JPEG or WebP image under 5 MB.');
+                  setError('Pilih gambar PNG, JPEG atau WebP di bawah 5 MB.');
                   e.target.value = '';
                   return;
                 }
@@ -127,9 +128,11 @@ export function UploadPanel({ session, own }: { session: Workshop; own: Submissi
             <figure className="upload-preview">
               <img
                 src={preview}
-                alt="Preview of your selected finished sticker"
+                alt="Pratonton gambar karya pilihan anda"
                 onError={() => {
-                  setError('This image cannot be previewed. Choose a valid PNG, JPEG or WebP.');
+                  setError(
+                    'Pratonton tidak dapat dibuka. Pilih gambar PNG, JPEG atau WebP yang sah.',
+                  );
                   setFile(null);
                 }}
               />
@@ -137,23 +140,21 @@ export function UploadPanel({ session, own }: { session: Workshop; own: Submissi
             </figure>
           )}
           <p className="fine-print">
-            Only upload your finished sticker. Never upload an original selfie or a student photo.
-            Selected files stay in this tab until sent; after a refresh, choose the file again.
+            Hantar karya siap sahaja. Jangan hantar swafoto asal atau gambar murid. Gambar pilihan
+            kekal dalam tab ini sehingga dihantar; jika laman dimuat semula, pilih gambar sekali
+            lagi.
           </p>
           <p className="notice">
             Karya yang dihantar akan dipaparkan dalam galeri dan boleh dimuat turun oleh peserta
             bengkel.
           </p>
           <button className="button dark full" disabled={!file || busy || !open}>
-            {busy
-              ? 'Sending your sticker…'
-              : own
-                ? 'Replace my submission'
-                : 'Send to the showcase'}
+            {busy ? 'Menghantar karya…' : own ? 'Gantikan Penghantaran' : 'Hantar Karya'}
           </button>
           {busy && (
             <p role="status">
-              Sending… Keep this tab open. You can still see the result if the stage changes.
+              Sedang menghantar… Biarkan tab ini terbuka. Status penghantaran kekal dipaparkan
+              walaupun peringkat berubah.
             </p>
           )}
         </form>

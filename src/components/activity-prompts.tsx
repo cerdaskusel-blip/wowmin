@@ -1,5 +1,6 @@
 'use client';
 import { useId, useRef, useState } from 'react';
+import { Copy, Check, Sparkles } from 'lucide-react';
 import { api } from '@/lib/firebase';
 import type { Workshop } from '@/lib/workshop';
 import { ErrorMessage } from './ui';
@@ -7,7 +8,7 @@ import { ErrorMessage } from './ui';
 export function ActivityPrompts({ session }: { session: Workshop }) {
   if (!session.activity) return null;
   return (
-    <section aria-label="Prompt Aktiviti">
+    <section className="activity-prompts" aria-label="Prompt Aktiviti">
       <h2>Arahan aktiviti</h2>
       <p>
         Salin prompt dan gunakan dalam aplikasi AI pilihan anda. Kemudian muat naik satu hasil karya
@@ -38,8 +39,10 @@ function PromptCard({
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
   return (
-    <article className="panel" aria-labelledby={`${id}-title`}>
-      <h3 id={`${id}-title`}>Prompt {index + 1}</h3>
+    <article className="panel activity-prompt-card" aria-labelledby={`${id}-title`}>
+      <h3 id={`${id}-title`}>
+        <Sparkles size={18} aria-hidden="true" /> Prompt {index + 1}
+      </h3>
       <label htmlFor={`${id}-text`}>Teks Prompt {index + 1}</label>
       <textarea ref={text} id={`${id}-text`} readOnly value={prompt} rows={5} />
       <button
@@ -58,6 +61,7 @@ function PromptCard({
           }
         }}
       >
+        {copied ? <Check size={18} aria-hidden="true" /> : <Copy size={18} aria-hidden="true" />}{' '}
         Salin Prompt
       </button>
       <p role="status">{copied ? 'Berjaya disalin!' : ''}</p>

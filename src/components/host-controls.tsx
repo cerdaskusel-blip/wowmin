@@ -1,7 +1,8 @@
 'use client';
+import { STAGE_COPY } from '@/lib/bahasa';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Member, Submission, Workshop, STAGE_INFO, STAGES, Stage, nextStage } from '@/lib/workshop';
+import { Member, Submission, Workshop, STAGES, Stage, nextStage } from '@/lib/workshop';
 import { EndSession } from './cleanup';
 import { Modal } from './modal';
 import { StickerImage, ErrorMessage, WorkshopBudget } from './ui';
@@ -38,31 +39,31 @@ export function HostControls({
         action: 'advance',
         title:
           next === 'results'
-            ? 'Close voting and reveal winners?'
+            ? 'Tutup undian dan paparkan pemenang?'
             : next === 'vote'
-              ? 'Open voting and lock submissions?'
-              : 'Close submissions and show the wall?',
+              ? 'Buka undian dan tutup penghantaran?'
+              : 'Tutup penghantaran dan paparkan galeri?',
       });
     else void act('advance');
   }
   return (
     <>
       <div className="host-controls">
-        <div className="live-totals" aria-label="Live workshop totals">
+        <div className="live-totals" aria-label="Jumlah langsung bengkel">
           <span>
-            <b>{session.participantCount}</b> / 60 joined
+            <b>{session.participantCount}</b> / 60 peserta
           </span>
           <span>
-            <b>{submitted}</b> submitted
+            <b>{submitted}</b> dihantar
           </span>
           <span>
-            <b>{approved}</b> approved
+            <b>{approved}</b> diluluskan
           </span>
           <span>
-            <b>{pending}</b> to review
+            <b>{pending}</b> perlu semakan
           </span>
           <span>
-            <b>{votes}</b> / {session.participantCount} votes cast
+            <b>{votes}</b> / {session.participantCount} undian
           </span>
         </div>
         <WorkshopBudget session={session} />
@@ -73,7 +74,7 @@ export function HostControls({
             target="_blank"
             className="button secondary small"
           >
-            Projector
+            Paparan Projektor
           </Link>
           {session.stage !== 'results' && (
             <>
@@ -82,40 +83,40 @@ export function HostControls({
                 disabled={busy}
                 onClick={() => act(session.pausedRemainingMs != null ? 'resume' : 'pause')}
               >
-                {session.pausedRemainingMs != null ? 'Resume workshop' : 'Pause workshop'}
+                {session.pausedRemainingMs != null ? 'Sambung Bengkel' : 'Jeda Bengkel'}
               </button>
               <button
                 className="button secondary small"
                 disabled={busy}
                 onClick={() => act('extend')}
               >
-                + 1 min
+                + 1 minit
               </button>
               <button className="button primary small" disabled={busy} onClick={advance}>
                 {session.stage === 'vote'
-                  ? 'Close voting & reveal'
+                  ? 'Tutup Undian & Papar Keputusan'
                   : next === 'vote'
-                    ? 'Open voting'
-                    : `Next: ${STAGE_INFO[next!].title}`}
+                    ? 'Buka Undian'
+                    : `Seterusnya: ${STAGE_COPY[next!].title}`}
               </button>
             </>
           )}
         </div>
         {!['vote', 'results'].includes(session.stage) && (
           <details className="manual-stages">
-            <summary>Manual stage controls / reopen submissions</summary>
+            <summary>Kawalan peringkat / buka semula penghantaran</summary>
             <p>
               {session.activity
                 ? 'Peringkat aktiviti berkongsi masa berbaki. Tukar peringkat tidak memulakan masa baharu. Peringkat tidak boleh dibuka semula selepas undian bermula.'
-                : 'Changes reset the stage timer and resume the workshop. Stages cannot reopen after voting starts.'}
+                : 'Pertukaran menetapkan semula pemasa peringkat dan menyambung bengkel. Peringkat tidak boleh dibuka semula selepas undian bermula.'}
             </p>
             <div className="host-actions">
               <label>
-                Go to stage
+                Pilih peringkat
                 <select value={target} onChange={(e) => setTarget(e.target.value as Stage)}>
                   {STAGES.slice(0, 5).map((s) => (
                     <option key={s} value={s}>
-                      {STAGE_INFO[s].title}
+                      {STAGE_COPY[s].title}
                     </option>
                   ))}
                 </select>
@@ -127,11 +128,11 @@ export function HostControls({
                   setConfirm({
                     action: 'transition',
                     data: { stage: target },
-                    title: `Move to ${STAGE_INFO[target].title}?`,
+                    title: `Buka peringkat ${STAGE_COPY[target].title}?`,
                   })
                 }
               >
-                Go to selected stage
+                Buka Peringkat Dipilih
               </button>
             </div>
           </details>
@@ -141,13 +142,13 @@ export function HostControls({
         <Modal title={confirm.title} onClose={() => setConfirm(null)}>
           <ErrorMessage message={actionError} />
           <p>
-            {submitted} submitted · {approved} approved · {pending} awaiting review · {votes}/
-            {session.participantCount} votes cast.
+            {submitted} dihantar · {approved} diluluskan · {pending} menunggu semakan · {votes}/
+            {session.participantCount} undian.
           </p>
           <p>
             {session.stage === 'vote'
-              ? 'This closes voting permanently and reveals the results.'
-              : 'Teachers with unfinished uploads may need submissions reopened. Moderation and reopening lock when voting starts.'}
+              ? 'Undian akan ditutup sepenuhnya dan keputusan akan dipaparkan.'
+              : 'Peserta yang belum selesai mungkin memerlukan penghantaran dibuka semula. Semakan karya dan pembukaan semula dikunci apabila undian bermula.'}
           </p>
           <div className="two-buttons">
             <button
@@ -156,7 +157,7 @@ export function HostControls({
               disabled={busy}
               onClick={() => setConfirm(null)}
             >
-              Keep this stage
+              Kekalkan Peringkat
             </button>
             <button
               className="button primary"
@@ -165,7 +166,7 @@ export function HostControls({
                 if (await act(confirm.action, confirm.data)) setConfirm(null);
               }}
             >
-              Confirm stage change
+              Sahkan Pertukaran
             </button>
           </div>
         </Modal>
@@ -187,7 +188,7 @@ export function ReviewDesk({
   const [filter, setFilter] = useState('pending');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
-  const [reason, setReason] = useState('Please upload a classroom-friendly finished sticker.');
+  const [reason, setReason] = useState('Sila hantar karya siap yang sesuai untuk bengkel guru.');
   const visible = submissions.filter(
     (s) =>
       s.status === filter &&
@@ -203,10 +204,10 @@ export function ReviewDesk({
   }
   return (
     <section className="review-desk">
-      <h2>Review desk</h2>
+      <h2>Semakan Karya</h2>
       <div className="review-toolbar">
         <label>
-          Show
+          Papar
           <select
             value={filter}
             onChange={(e) => {
@@ -215,28 +216,28 @@ export function ReviewDesk({
             }}
           >
             <option value="pending">
-              Pending ({submissions.filter((s) => s.status === 'pending').length})
+              Menunggu ({submissions.filter((s) => s.status === 'pending').length})
             </option>
             <option value="rejected">
-              Returned ({submissions.filter((s) => s.status === 'rejected').length})
+              Pulangkaned ({submissions.filter((s) => s.status === 'rejected').length})
             </option>
           </select>
         </label>
         <label>
-          Find a submission
+          Cari penghantaran
           <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} />
         </label>
       </div>
-      {locked && <p className="notice">Moderation is locked because voting has started.</p>}
+      {locked && <p className="notice">Semakan karya dikunci kerana undian telah bermula.</p>}
       {!visible.length ? (
-        <p>No {filter === 'pending' ? 'pending' : 'returned'} submissions match this view.</p>
+        <p>Tiada penghantaran {filter === 'pending' ? 'menunggu' : 'dipulangkan'} yang sepadan.</p>
       ) : (
         <div className="moderation-grid">
           {visible.map((sub) => (
             <article className="moderation-card" key={sub.id}>
               <button
                 className="wall-image-button"
-                aria-label={`Review sticker by ${sub.nickname}`}
+                aria-label={`Semak karya ${sub.nickname}`}
                 onClick={() => setSelected(sub.id)}
               >
                 <StickerImage sessionId={session.id} sub={sub} />
@@ -250,7 +251,7 @@ export function ReviewDesk({
                   disabled={busy || locked}
                   onClick={() => moderate(sub, 'approved')}
                 >
-                  {sub.status === 'rejected' ? 'Restore to wall' : 'Approve'}
+                  {sub.status === 'rejected' ? 'Pulihkan ke Galeri' : 'Luluskan'}
                 </button>
                 {sub.status === 'pending' && (
                   <button
@@ -258,7 +259,7 @@ export function ReviewDesk({
                     disabled={busy || locked}
                     onClick={() => setSelected(sub.id)}
                   >
-                    Return
+                    Pulangkan
                   </button>
                 )}
               </div>
@@ -267,16 +268,16 @@ export function ReviewDesk({
         </div>
       )}
       {current && (
-        <Modal title={`Review · ${current.nickname}`} onClose={() => setSelected(null)}>
+        <Modal title={`Semak · ${current.nickname}`} onClose={() => setSelected(null)}>
           <StickerImage sessionId={session.id} sub={current} />
           <p>{current.caption}</p>
           <label>
-            Reason if returning
+            Sebab dipulangkan
             <input value={reason} maxLength={120} onChange={(e) => setReason(e.target.value)} />
           </label>
           <p>
-            Use Tab to reach Approve or Return, then Enter. The next submission opens after each
-            decision.
+            Gunakan Tab untuk memilih Luluskan atau Pulangkan, kemudian tekan Enter. Penghantaran
+            seterusnya akan dibuka selepas setiap keputusan.
           </p>
           <div className="two-buttons">
             <button
@@ -285,18 +286,18 @@ export function ReviewDesk({
               disabled={busy || locked}
               onClick={() => moderate(current, 'approved')}
             >
-              Approve and next
+              Luluskan & Seterusnya
             </button>
             <button
               className="button secondary"
               disabled={busy || locked}
               onClick={() => moderate(current, 'rejected')}
             >
-              Return and next
+              Pulangkan & Seterusnya
             </button>
           </div>
           <button className="text-button" onClick={() => setSelected(null)}>
-            Back to review desk
+            Kembali ke Semakan
           </button>
         </Modal>
       )}
@@ -306,10 +307,10 @@ export function ReviewDesk({
 export function ProgressList({ members }: { members: Member[] }) {
   const [search, setSearch] = useState('');
   return (
-    <section className="panel progress-panel" tabIndex={0} aria-label="Participant progress">
-      <h3>The room at a glance</h3>
+    <section className="panel progress-panel" tabIndex={0} aria-label="Kemajuan peserta">
+      <h3>Kemajuan Peserta</h3>
       <label>
-        Find a teacher
+        Cari peserta
         <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} />
       </label>
       {members
@@ -320,11 +321,11 @@ export function ProgressList({ members }: { members: Member[] }) {
             <small>
               {(
                 {
-                  'prompt-ready': 'Prompt ready',
-                  generating: 'Creating',
-                  submitted: 'Submitted',
-                  voted: 'Voted ✓',
-                  joined: 'In the room',
+                  'prompt-ready': 'Prompt sedia',
+                  generating: 'Sedang mencipta',
+                  submitted: 'Dihantar',
+                  voted: 'Sudah mengundi ✓',
+                  joined: 'Sudah masuk',
                 } as Record<string, string>
               )[m.progress] || m.progress}
             </small>

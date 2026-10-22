@@ -60,7 +60,7 @@ export function Provider({ children }: { children: ReactNode }) {
             ready: true,
             facilitator: false,
             offset: 0,
-            error: 'Could not connect to the workshop. Check your connection and refresh.',
+            error: 'Tidak dapat bersambung ke bengkel. Semak internet dan muat semula.',
           });
         }
       }),

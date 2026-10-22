@@ -18,7 +18,7 @@ export default function Facilitator() {
   const router = useRouter();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [title, setTitle] = useState('The Teacher Sticker Lab');
+  const [title, setTitle] = useState('Bengkel Kreatif Guru');
   const [last, setLast] = useState('');
   useEffect(() => {
     setLast(localStorage.getItem('wow-host-session') || '');
@@ -50,32 +50,32 @@ export default function Facilitator() {
   }
   return (
     <>
-      <Header label="A great room starts with you." />
+      <Header label="Bengkel hebat bermula dengan anda." />
       <main className="studio">
         {facilitator && <ActivityDashboard key={user?.uid} />}
-        <div>
+        <div hidden={facilitator}>
           <span className="eyebrow">
-            <span className="edition">BACKSTAGE</span> FACILITATOR STUDIO
+            <span className="edition">DI SEBALIK TABIR</span> RUANG FASILITATOR
           </span>
           <h1>
-            You bring the energy.
+            Anda bawa semangat.
             <br />
-            <em>We’ll bring the WOW.</em>
+            <em>Kita cipta Wow Mean!</em>
           </h1>
           <p className="hero-description">
-            One room. Fifty creative teachers.
+            Satu ruang. Sehingga 60 guru kreatif.
             <br />
-            An unforgettable fifteen minutes.
+            Cipta pengalaman yang diingati bersama.
           </p>
           <div className="studio-features">
             <p>
-              <Users /> Bring everyone together with one join code.
+              <Users /> Jemput semua peserta dengan satu kod sesi.
             </p>
             <p>
-              <Timer /> Keep the room in sync, one stage at a time.
+              <Timer /> Selaraskan aktiviti dan masa dari satu tempat.
             </p>
             <p>
-              <Presentation /> Let every little creation have its big moment.
+              <Presentation /> Beri setiap karya peluang untuk bersinar.
             </p>
           </div>
         </div>
@@ -87,10 +87,10 @@ export default function Facilitator() {
               <span className="round-icon">
                 <SparkIcon />
               </span>
-              <h2>Set the stage.</h2>
-              <p>Create a room, invite your teachers, and make it memorable.</p>
+              <h2>Cipta sesi ringkas.</h2>
+              <p>Mulakan bengkel tanpa templat menggunakan aliran asal.</p>
               <label>
-                Workshop name
+                Tajuk bengkel
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -99,7 +99,7 @@ export default function Facilitator() {
                 />
               </label>
               <button disabled={busy} className="button primary full">
-                {busy ? 'Creating your room…' : 'Create workshop'}
+                {busy ? 'Mencipta sesi…' : 'Cipta Sesi'}
                 <ArrowRight size={18} />
               </button>
               {last && (
@@ -108,11 +108,11 @@ export default function Facilitator() {
                   className="button secondary full"
                   onClick={() => router.push(`/session/${last}`)}
                 >
-                  Return to your last workshop
+                  Kembali ke sesi terakhir
                 </button>
               )}
               <button type="button" className="text-button" onClick={() => signOut(auth)}>
-                Sign out
+                Log Keluar
               </button>
             </form>
           ) : (
@@ -120,28 +120,28 @@ export default function Facilitator() {
               <span className="round-icon">
                 <ShieldCheck />
               </span>
-              <h2>Your facilitator pass.</h2>
-              <p>Sign in with an account authorized by your workshop organizer.</p>
+              <h2>Masuk ke Ruang Fasilitator</h2>
+              <p>Log masuk dengan akaun yang telah diberi akses oleh penganjur bengkel.</p>
               {user && !user.isAnonymous && (
                 <p className="notice">
-                  This account does not have the facilitator role. Ask your project administrator to
-                  authorize your Firebase account.
+                  Akaun ini belum mempunyai akses fasilitator. Hubungi pentadbir bengkel untuk
+                  mendapatkan akses.
                 </p>
               )}
               <button disabled={busy} onClick={login} className="button primary full">
                 {busy
-                  ? 'Signing in…'
+                  ? 'Sedang log masuk…'
                   : isLocal
-                    ? 'Enter local facilitator studio'
-                    : 'Continue with Google'}
+                    ? 'Masuk Fasilitator Tempatan'
+                    : 'Teruskan dengan Google'}
                 <ArrowRight size={18} />
               </button>
               {isLocal && (
-                <p className="fine-print">Local Firebase emulator · development access only</p>
+                <p className="fine-print">Emulator Firebase tempatan · akses pembangunan sahaja</p>
               )}
               {user && (
                 <button className="text-button" onClick={() => signOut(auth)}>
-                  Sign out / switch account
+                  Log Keluar / Tukar Akaun
                 </button>
               )}
             </>
