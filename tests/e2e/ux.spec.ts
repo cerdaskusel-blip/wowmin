@@ -13,32 +13,32 @@ async function capture(p: Page, name: string, fullPage = false) {
 }
 async function start(host: Page, title: string) {
   await host.goto('/facilitator');
-  await host.getByRole('button', { name: 'Enter local facilitator studio' }).click();
-  await host.getByLabel('Workshop name').fill(title);
-  await host.getByRole('button', { name: 'Create workshop' }).click();
-  await expect(host.getByText('FACILITATOR DASHBOARD')).toBeVisible();
+  await host.getByRole('button', { name: 'Masuk Fasilitator Tempatan' }).click();
+  await host.getByLabel('Tajuk bengkel').fill(title);
+  await host.getByRole('button', { name: 'Cipta Sesi' }).click();
+  await expect(host.getByText(/DASHBOARD FASILITATOR/)).toBeVisible();
   return { id: host.url().split('/').pop()!, code: await host.locator('.room-code b').innerText() };
 }
 async function join(p: Page, code: string, name: string) {
   await p.goto('/?code=' + code);
-  await p.getByLabel('Your nickname').fill(name);
-  await p.getByRole('button', { name: 'Join the workshop' }).click();
-  await expect(p.getByText('YOU’RE IN. LET’S GET CREATIVE.')).toBeVisible();
+  await p.getByLabel('Nama Paparan').fill(name);
+  await p.getByRole('button', { name: 'Masuk Bengkel' }).click();
+  await expect(p.getByText('ANDA SUDAH MASUK. JOM BERKARYA!')).toBeVisible();
 }
 async function next(h: Page, name: string, confirm = false) {
   const committed = h.waitForResponse(
     (r) => r.url().endsWith('/api/action') && r.request().postDataJSON()?.action === 'advance',
   );
   await h.getByRole('button', { name, exact: true }).click();
-  if (confirm) await h.getByRole('button', { name: 'Confirm stage change' }).click();
+  if (confirm) await h.getByRole('button', { name: 'Sahkan Pertukaran' }).click();
   expect((await committed).ok()).toBeTruthy();
   if (confirm) await expect(h.getByRole('dialog')).not.toBeVisible();
 }
 async function reopen(h: Page) {
-  await h.getByText('Manual stage controls / reopen submissions', { exact: true }).click();
-  await h.getByLabel('Go to stage').selectOption('submit');
-  await h.getByRole('button', { name: 'Go to selected stage' }).click();
-  await h.getByRole('button', { name: 'Confirm stage change' }).click();
+  await h.getByText('Kawalan peringkat / buka semula penghantaran', { exact: true }).click();
+  await h.getByLabel('Pilih peringkat').selectOption('submit');
+  await h.getByRole('button', { name: 'Buka Peringkat Dipilih' }).click();
+  await h.getByRole('button', { name: 'Sahkan Pertukaran' }).click();
 }
 async function sticker(i = 0) {
   return sharp(
@@ -105,15 +105,15 @@ test('submission recovery, pause, expiry, reopening and saved membership', async
   });
   const p = await context.newPage();
   await join(p, room.code, 'Maya');
-  await next(host, 'Next: Find your sticker voice');
-  await expect(p.getByRole('button', { name: 'Copy prompt', exact: true })).toBeInViewport();
-  await p.getByRole('button', { name: 'Little pep talks' }).click();
-  await expect(p.getByRole('button', { name: 'Little pep talks' })).toHaveAttribute(
+  await next(host, 'Seterusnya: Cari idea anda');
+  await expect(p.getByRole('button', { name: 'Salin Prompt', exact: true })).toBeInViewport();
+  await p.getByRole('button', { name: 'Kata semangat' }).click();
+  await expect(p.getByRole('button', { name: 'Kata semangat' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  await p.getByLabel('Make it yours').fill('Keep growing!');
-  await p.getByRole('button', { name: 'Copy prompt', exact: true }).click();
+  await p.getByLabel('Ubah kapsyen anda').fill('Keep growing!');
+  await p.getByRole('button', { name: 'Salin Prompt', exact: true }).click();
   expect(await p.evaluate(() => navigator.clipboard.readText())).toContain('Keep growing!');
   await p.evaluate(() =>
     Object.defineProperty(navigator.clipboard, 'writeText', {
@@ -124,38 +124,38 @@ test('submission recovery, pause, expiry, reopening and saved membership', async
     }),
   );
   await p.waitForTimeout(2600);
-  await p.getByRole('button', { name: 'Copy prompt', exact: true }).click();
-  await p.getByRole('link', { name: 'Copy needs your help — select prompt' }).click();
-  await expect(p.getByText('Could not copy automatically.', { exact: false })).toBeInViewport();
-  await p.getByRole('button', { name: 'Select prompt' }).click();
+  await p.getByRole('button', { name: 'Salin Prompt', exact: true }).click();
+  await p.getByRole('link', { name: 'Salinan gagal — pilih teks prompt' }).click();
+  await expect(p.getByText('Salinan automatik gagal.', { exact: false })).toBeInViewport();
+  await p.getByRole('button', { name: 'Pilih Prompt' }).click();
   expect(
     await p
       .locator('#generated-prompt')
       .evaluate((e: HTMLTextAreaElement) => e.selectionEnd - e.selectionStart),
   ).toBeGreaterThan(100);
   await capture(p, 'copy-error-mobile');
-  await next(host, 'Next: Make a little magic');
+  await next(host, 'Seterusnya: Masa untuk cipta');
   const image = await sticker();
   await p
-    .getByLabel('Finished sticker image')
+    .getByLabel('Gambar karya siap')
     .setInputFiles({ name: 'sticker.png', mimeType: 'image/png', buffer: image });
-  await expect(p.getByAltText('Preview of your selected finished sticker')).toBeVisible();
-  await host.getByRole('button', { name: 'Pause workshop' }).click();
+  await expect(p.getByAltText('Pratonton gambar karya pilihan anda')).toBeVisible();
+  await host.getByRole('button', { name: 'Jeda Bengkel' }).click();
   await expect(
-    p.getByText('Workshop paused. Uploads and voting will resume', { exact: false }),
+    p.getByText('Bengkel dijeda. Penghantaran dan undian akan disambung', { exact: false }),
   ).toBeVisible();
-  await expect(p.getByRole('button', { name: 'Send to the showcase' })).toBeDisabled();
+  await expect(p.getByRole('button', { name: 'Hantar Karya' })).toBeDisabled();
   const paused = (await admin.doc(`sessions/${room.id}`).get()).data()!.pausedRemainingMs;
-  await host.getByRole('button', { name: '+ 1 min' }).click();
+  await host.getByRole('button', { name: '+ 1 minit' }).click();
   await expect
     .poll(async () => (await admin.doc(`sessions/${room.id}`).get()).data()!.pausedRemainingMs)
     .toBe(paused + 60000);
-  await host.getByRole('button', { name: 'Resume workshop' }).click();
-  await expect(p.getByRole('button', { name: 'Send to the showcase' })).toBeEnabled();
+  await host.getByRole('button', { name: 'Sambung Bengkel' }).click();
+  await expect(p.getByRole('button', { name: 'Hantar Karya' })).toBeEnabled();
   await admin.doc(`sessions/${room.id}`).update({ stageEndsAt: Date.now() + 500 });
-  await expect(p.getByRole('button', { name: 'Send to the showcase' })).toBeDisabled();
-  await host.getByRole('button', { name: '+ 1 min' }).click();
-  await expect(p.getByRole('button', { name: 'Send to the showcase' })).toBeEnabled();
+  await expect(p.getByRole('button', { name: 'Hantar Karya' })).toBeDisabled();
+  await host.getByRole('button', { name: '+ 1 minit' }).click();
+  await expect(p.getByRole('button', { name: 'Hantar Karya' })).toBeEnabled();
   let release!: () => void, arrived!: () => void;
   const gate = new Promise<void>((r) => (release = r)),
     hit = new Promise<void>((r) => (arrived = r));
@@ -164,43 +164,45 @@ test('submission recovery, pause, expiry, reopening and saved membership', async
     await gate;
     await route.continue();
   });
-  await p.getByRole('button', { name: 'Send to the showcase' }).click();
+  await p.getByRole('button', { name: 'Hantar Karya' }).click();
   await hit;
-  await next(host, 'Next: Send your sticker');
-  await next(host, 'Next: The sticker showcase', true);
+  await next(host, 'Seterusnya: Hantar karya');
+  await next(host, 'Seterusnya: Galeri Karya', true);
   release();
   await expect(p.locator('.upload-panel .error')).toContainText(
-    'Your selected image is still here',
+    'Gambar pilihan anda masih di sini',
   );
-  await expect(p.getByAltText('Preview of your selected finished sticker')).toBeVisible();
+  await expect(p.getByAltText('Pratonton gambar karya pilihan anda')).toBeVisible();
   await expect(p.locator('.upload-panel .error')).toBeInViewport();
   await capture(p, 'interrupted-upload-mobile');
   await p.unroute('**/api/upload');
   await reopen(host);
-  await p.getByRole('button', { name: 'Send to the showcase' }).click();
-  await expect(p.getByText('Sent! Your facilitator is taking a look.')).toBeVisible();
+  await p.getByRole('button', { name: 'Hantar Karya' }).click();
+  await expect(p.getByText('Berjaya dihantar! Fasilitator sedang menyemak.')).toBeVisible();
   await host
     .locator('.moderation-card')
-    .getByRole('button', { name: 'Approve', exact: true })
+    .getByRole('button', { name: 'Luluskan', exact: true })
     .click();
-  await next(host, 'Next: The sticker showcase', true);
-  await host.getByRole('button', { name: 'Return to creator' }).click();
-  await expect(p.getByText('Let’s give it another try.')).toBeVisible();
+  await next(host, 'Seterusnya: Galeri Karya', true);
+  await host.getByRole('button', { name: 'Pulangkan kepada Peserta' }).click();
+  await expect(p.getByText('Karya dipulangkan. Jom cuba semula.')).toBeVisible();
   await expect(
-    p.getByText('Submissions are closed. Ask your facilitator', { exact: false }),
+    p.getByText('Penghantaran ditutup. Minta fasilitator', { exact: false }),
   ).toBeVisible();
-  await expect(p.getByRole('link', { name: 'Sticker returned · View feedback' })).toBeInViewport();
+  await expect(
+    p.getByRole('link', { name: 'Karya dipulangkan · Lihat maklum balas' }),
+  ).toBeInViewport();
   await capture(p, 'returned-gallery-mobile');
-  await host.getByLabel(/^Show/).selectOption('rejected');
-  await host.getByRole('button', { name: 'Restore to wall' }).click();
-  await expect(p.getByText('You’re in the showcase!')).toBeVisible();
-  await p.getByRole('link', { name: 'WOW The Creative Teacher Workshop home' }).click();
-  await expect(p.getByRole('link', { name: /Resume workshop/ })).toBeVisible();
+  await host.getByLabel(/^Papar/).selectOption('rejected');
+  await host.getByRole('button', { name: 'Pulihkan ke Galeri' }).click();
+  await expect(p.getByText('Karya anda ada di galeri!')).toBeVisible();
+  await p.getByRole('link', { name: /Wow Mean!.*Halaman Utama/ }).click();
+  await expect(p.getByRole('link', { name: /Sambung bengkel/ })).toBeVisible();
   await capture(p, 'resume-mobile');
-  await p.getByRole('link', { name: /Resume workshop/ }).click();
-  await expect(p.getByText('You’re in the showcase!')).toBeVisible();
+  await p.getByRole('link', { name: /Sambung bengkel/ }).click();
+  await expect(p.getByText('Karya anda ada di galeri!')).toBeVisible();
   const token = await hostToken(request);
-  await next(host, 'Open voting', true);
+  await next(host, 'Buka Undian', true);
   expect(
     (await act(request, token, 'transition', { sessionId: room.id, stage: 'submit' })).status(),
   ).toBe(409);
@@ -213,7 +215,7 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
   request,
 }) => {
   test.setTimeout(300000);
-  const room = await start(host, 'WOW #1 · The Teacher Sticker Lab');
+  const room = await start(host, 'WOW #1 · Bengkel Kreatif Guru');
   const ht = await hostToken(request);
   const mobile = await browser.newContext({
     viewport: { width: 390, height: 844 },
@@ -230,10 +232,10 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
     [d, 'Daniel', 'desktop'],
   ] as const) {
     await p.goto('/?code=' + room.code);
-    await p.getByLabel('Your nickname').fill(name);
+    await p.getByLabel('Nama Paparan').fill(name);
     await capture(p, `join-${size}`);
-    await p.getByRole('button', { name: 'Join the workshop' }).click();
-    await expect(p.getByText('YOU’RE IN. LET’S GET CREATIVE.')).toBeVisible();
+    await p.getByRole('button', { name: 'Masuk Bengkel' }).click();
+    await expect(p.getByText('ANDA SUDAH MASUK. JOM BERKARYA!')).toBeVisible();
   }
   const crowd = await Promise.all(Array.from({ length: 48 }, () => guest(request)));
   const joinsStarted = Date.now();
@@ -256,38 +258,38 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
   await projector.setViewportSize({ width: 1920, height: 1080 });
   await projector.goto(`/projector/${room.id}`);
   await capture(projector, 'projector-welcome-desktop');
-  await next(host, 'Next: Find your sticker voice');
+  await next(host, 'Seterusnya: Cari idea anda');
   for (const [p, size] of [
     [m, 'mobile'],
     [d, 'desktop'],
   ] as const) {
-    await p.getByRole('button', { name: 'Little pep talks' }).click();
-    await p.getByLabel('Make it yours').fill('Keep growing, little thinkers!');
+    await p.getByRole('button', { name: 'Kata semangat' }).click();
+    await p.getByLabel('Ubah kapsyen anda').fill('Keep growing, little thinkers!');
     await p.getByRole('button', { name: 'Kawaii', exact: false }).click();
     await p.evaluate(() => scrollTo(0, 0));
     await capture(p, `studio-${size}`);
-    await p.getByRole('button', { name: 'Copy my prompt', exact: true }).click();
+    await p.getByRole('button', { name: 'Salin Prompt Saya', exact: true }).click();
     await expect(
-      p.getByRole('button', { name: 'Copied. Go make your WOW!', exact: true }),
+      p.getByRole('button', { name: 'Disalin! Jom cipta karya anda', exact: true }),
     ).toBeVisible();
     await capture(p, `prompt-copied-${size}`);
   }
   const audits: Record<string, unknown> = {};
   audits.studio = await audit(m, 'studio-mobile');
-  await next(host, 'Next: Make a little magic');
+  await next(host, 'Seterusnya: Masa untuk cipta');
   for (const [p, size, i] of [
     [m, 'mobile', 0],
     [d, 'desktop', 1],
   ] as const) {
-    await p.getByLabel('Finished sticker image').setInputFiles({
+    await p.getByLabel('Gambar karya siap').setInputFiles({
       name: 'finished-sticker.png',
       mimeType: 'image/png',
       buffer: await sticker(i),
     });
     await p.locator('.upload-panel').scrollIntoViewIfNeeded();
     await capture(p, `upload-ready-${size}`);
-    await p.getByRole('button', { name: 'Send to the showcase' }).click();
-    await expect(p.getByText('Sent! Your facilitator is taking a look.')).toBeVisible();
+    await p.getByRole('button', { name: 'Hantar Karya' }).click();
+    await expect(p.getByText('Berjaya dihantar! Fasilitator sedang menyemak.')).toBeVisible();
   }
   // Upload in short concurrent batches, as device downloads finish across a room.
   for (let i = 0; i < crowd.length; i += 8)
@@ -305,7 +307,7 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
       }),
     );
   await expect(host.locator('.moderation-card')).toHaveCount(50);
-  await expect(host.getByLabel('Live workshop totals')).toContainText('50 submitted');
+  await expect(host.getByLabel('Jumlah langsung bengkel')).toContainText('50 dihantar');
   await host.evaluate(() => scrollTo(0, 0));
   await capture(host, 'facilitator-desktop');
   await host.setViewportSize({ width: 390, height: 844 });
@@ -327,8 +329,8 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
         ).toBeTruthy(),
       ),
     );
-  await next(host, 'Next: Send your sticker');
-  await next(host, 'Next: The sticker showcase', true);
+  await next(host, 'Seterusnya: Hantar karya');
+  await next(host, 'Seterusnya: Galeri Karya', true);
   await expect(m.locator('.gallery-card')).toHaveCount(50);
   await expect(projector.locator('.gallery-card')).toHaveCount(50);
   for (const [p, size] of [
@@ -362,16 +364,16 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
     ).toBeGreaterThan(25);
   }
   await projector.setViewportSize({ width: 1920, height: 1080 });
-  await m.getByLabel('Find a teacher or caption').fill('Daniel');
+  await m.getByLabel('Cari peserta atau kapsyen').fill('Daniel');
   await expect(m.locator('.gallery-card')).toHaveCount(1);
-  await m.getByRole('button', { name: 'Enlarge sticker by Daniel' }).click();
+  await m.getByRole('button', { name: 'Besarkan karya Daniel' }).click();
   await expect(m.getByRole('dialog')).toBeVisible();
   await m.keyboard.press('Escape');
   await expect(m.getByRole('dialog')).not.toBeVisible();
-  await expect(m.getByRole('button', { name: 'Enlarge sticker by Daniel' })).toBeFocused();
-  await m.getByLabel('Find a teacher or caption').fill('');
-  await next(host, 'Open voting', true);
-  await expect(m.getByRole('heading', { name: 'Pick your favorite.' })).toBeVisible();
+  await expect(m.getByRole('button', { name: 'Besarkan karya Daniel' })).toBeFocused();
+  await m.getByLabel('Cari peserta atau kapsyen').fill('');
+  await next(host, 'Buka Undian', true);
+  await expect(m.getByRole('heading', { name: 'Pilih kegemaran.' })).toBeVisible();
   for (const [p, size] of [
     [m, 'mobile'],
     [d, 'desktop'],
@@ -379,8 +381,8 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
     await p.evaluate(() => scrollTo(0, 0));
     await capture(p, `voting-${size}`);
   }
-  await m.getByLabel('Find a teacher or caption').fill('Daniel');
-  await m.getByRole('button', { name: 'This is my favorite' }).click();
+  await m.getByLabel('Cari peserta atau kapsyen').fill('Daniel');
+  await m.getByRole('button', { name: 'Undi Karya Ini' }).click();
   await expect(
     m.getByRole('dialog').getByRole('heading', { name: 'Daniel', exact: true }),
   ).toBeVisible();
@@ -392,8 +394,8 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
   audits.vote = await audit(m, 'vote-dialog');
   await m.keyboard.press('Escape');
   await expect(m.getByRole('dialog')).not.toBeVisible();
-  await host.getByRole('button', { name: 'Pause workshop' }).click();
-  await expect(m.getByRole('button', { name: 'This is my favorite' })).toBeDisabled();
+  await host.getByRole('button', { name: 'Jeda Bengkel' }).click();
+  await expect(m.getByRole('button', { name: 'Undi Karya Ini' })).toBeDisabled();
   expect(
     (
       await act(request, crowd[0].idToken, 'vote', {
@@ -402,13 +404,13 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
       })
     ).status(),
   ).toBe(409);
-  await host.getByRole('button', { name: 'Resume workshop' }).click();
-  await m.getByRole('button', { name: 'This is my favorite' }).click();
-  await m.getByRole('button', { name: 'Cast my vote' }).click();
-  await expect(m.getByText('Your vote is counted', { exact: true })).toBeVisible();
-  await d.getByLabel('Find a teacher or caption').fill('Maya');
-  await d.getByRole('button', { name: 'This is my favorite' }).click();
-  await d.getByRole('button', { name: 'Cast my vote' }).click();
+  await host.getByRole('button', { name: 'Sambung Bengkel' }).click();
+  await m.getByRole('button', { name: 'Undi Karya Ini' }).click();
+  await m.getByRole('button', { name: 'Sahkan Undian' }).click();
+  await expect(m.getByText('Undian anda dikira', { exact: true })).toBeVisible();
+  await d.getByLabel('Cari peserta atau kapsyen').fill('Maya');
+  await d.getByRole('button', { name: 'Undi Karya Ini' }).click();
+  await d.getByRole('button', { name: 'Sahkan Undian' }).click();
   await Promise.all(
     crowd.map(async (u, i) => {
       const target = crowd[((i % 3) + 1) % crowd.length];
@@ -420,7 +422,7 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
       expect(r.ok(), await r.text()).toBeTruthy();
     }),
   );
-  await expect(host.getByLabel('Live workshop totals')).toContainText('50 / 50 votes cast');
+  await expect(host.getByLabel('Jumlah langsung bengkel')).toContainText('50 / 50 undian');
   expect((await admin.collection(`sessions/${room.id}/votes`).get()).size).toBe(50);
   expect(
     (
@@ -430,7 +432,7 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
       })
     ).status(),
   ).toBe(409);
-  await next(host, 'Close voting & reveal', true);
+  await next(host, 'Tutup Undian & Papar Keputusan', true);
   await expect(projector.locator('.winner')).toHaveCount(3);
   for (const [p, size] of [
     [m, 'mobile'],
@@ -475,8 +477,8 @@ test('50 participants upload, moderate, vote and reveal on a responsive live wal
       },
     ],
   });
-  await expect(projector.getByRole('button', { name: 'Next winners' })).toBeVisible();
-  await projector.getByRole('button', { name: 'Next winners' }).click();
+  await expect(projector.getByRole('button', { name: 'Pemenang Seterusnya' })).toBeVisible();
+  await projector.getByRole('button', { name: 'Pemenang Seterusnya' }).click();
   await expect(projector.getByText('Extra tied creator')).toBeVisible();
   await admin.doc(`sessions/${room.id}`).update({ winners: final.winners });
   writeFileSync(

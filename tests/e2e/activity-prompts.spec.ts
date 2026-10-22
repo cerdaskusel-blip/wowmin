@@ -74,30 +74,30 @@ for (const count of [1, 2, 3, 4, 5]) {
       expect(session.stageEndsAt - session.createdAt).toBe(template.durationMinutes * 60000);
       expect(session.expiresAt - session.createdAt).toBe(4 * 3600000);
       await host.goto('/facilitator');
-      await host.getByRole('button', { name: 'Enter local facilitator studio' }).click();
+      await host.getByRole('button', { name: 'Masuk Fasilitator Tempatan' }).click();
       await host.goto(`/session/${sessionId}`);
       await expect(host.locator('.qr svg').first()).toBeVisible();
       // Follow the exact invitation URL shared with the QR, or enter its code manually.
       if (count % 2) {
         await host.context().grantPermissions(['clipboard-read', 'clipboard-write']);
         await host.bringToFront();
-        await host.getByRole('button', { name: 'Copy invitation link' }).click();
+        await host.getByRole('button', { name: 'Salin Pautan Jemputan' }).click();
         const joinUrl = await host.evaluate(() => navigator.clipboard.readText());
         expect(new URL(joinUrl).searchParams.get('code')).toBe(session.code);
         await participant.goto(joinUrl);
-        await expect(participant.getByLabel('Session code')).toHaveValue(session.code);
+        await expect(participant.getByLabel('Kod Sesi')).toHaveValue(session.code);
       } else {
         await participant.goto('/');
-        await participant.getByLabel('Session code').fill(session.code);
+        await participant.getByLabel('Kod Sesi').fill(session.code);
       }
-      await participant.getByLabel('Your nickname').fill(`Peserta ${count}`);
-      await participant.getByRole('button', { name: 'Join the workshop' }).click();
+      await participant.getByLabel('Nama Paparan').fill(`Peserta ${count}`);
+      await participant.getByRole('button', { name: 'Masuk Bengkel' }).click();
       await expect(participant.getByRole('heading', { level: 1, name: title })).toBeVisible();
       await expect(participant.getByText(description, { exact: true })).toBeVisible();
       const region = participant.getByRole('region', { name: 'Prompt Aktiviti' });
       await expect(region.getByRole('article')).toHaveCount(count);
-      await expect(participant.getByLabel('Make it yours')).toHaveCount(0);
-      await expect(participant.getByRole('group', { name: 'Caption collections' })).toHaveCount(0);
+      await expect(participant.getByLabel('Ubah kapsyen anda')).toHaveCount(0);
+      await expect(participant.getByRole('group', { name: 'Koleksi kapsyen' })).toHaveCount(0);
       const headingTimer = participant.locator('.stage-heading .timer');
       const timerText = (await headingTimer.innerText()).replace(/\s/g, '');
       const [minutes, seconds] = timerText.split(':').map(Number);
@@ -144,10 +144,12 @@ for (const count of [1, 2, 3, 4, 5]) {
         .png()
         .toBuffer();
       await participant
-        .getByLabel('Finished sticker image')
+        .getByLabel('Gambar karya siap')
         .setInputFiles({ name: 'karya.png', mimeType: 'image/png', buffer: png });
-      await participant.getByRole('button', { name: 'Send to the showcase' }).click();
-      await expect(participant.getByText('Sent! Your facilitator is taking a look.')).toBeVisible();
+      await participant.getByRole('button', { name: 'Hantar Karya' }).click();
+      await expect(
+        participant.getByText('Berjaya dihantar! Fasilitator sedang menyemak.'),
+      ).toBeVisible();
       const submissions = await db.collection(`sessions/${sessionId}/submissions`).get();
       expect(submissions.size).toBe(1);
       expect(submissions.docs[0].data().nickname).toBe(`Peserta ${count}`);
@@ -161,7 +163,7 @@ for (const count of [1, 2, 3, 4, 5]) {
         const submissionId = submissions.docs[0].id;
         await action(request, token, 'moderate', { sessionId, submissionId, status: 'approved' });
         await action(request, token, 'transition', { sessionId, stage: 'gallery' });
-        await expect(participant.getByRole('region', { name: 'Live Sticker Wall' })).toBeVisible();
+        await expect(participant.getByRole('region', { name: 'Galeri Karya' })).toBeVisible();
         await action(request, token, 'advance', { sessionId });
         const signup = await request.post(
           'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=demo-key',

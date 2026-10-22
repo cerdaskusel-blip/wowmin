@@ -3,20 +3,20 @@ import sharp from 'sharp';
 import AxeBuilder from '@axe-core/playwright';
 async function join(page: Page, code: string, name: string) {
   await page.goto('/');
-  await page.getByLabel('Session code').fill(code);
-  await page.getByLabel('Your nickname').fill(name);
-  await page.getByRole('button', { name: 'Join the workshop' }).click();
-  await expect(page.getByText('YOU’RE IN. LET’S GET CREATIVE.')).toBeVisible();
+  await page.getByLabel('Kod Sesi').fill(code);
+  await page.getByLabel('Nama Paparan').fill(name);
+  await page.getByRole('button', { name: 'Masuk Bengkel' }).click();
+  await expect(page.getByText('ANDA SUDAH MASUK. JOM BERKARYA!')).toBeVisible();
 }
 test('live workshop: join, craft, upload, moderate, vote, reveal across browsers', async ({
   browser,
   page: host,
 }) => {
   await host.goto('/facilitator');
-  await host.getByRole('button', { name: 'Enter local facilitator studio' }).click();
-  await host.getByLabel('Workshop name').fill('Teachers make WOW');
-  await host.getByRole('button', { name: 'Create workshop' }).click();
-  await expect(host.getByText('FACILITATOR DASHBOARD')).toBeVisible();
+  await host.getByRole('button', { name: 'Masuk Fasilitator Tempatan' }).click();
+  await host.getByLabel('Tajuk bengkel').fill('Teachers make WOW');
+  await host.getByRole('button', { name: 'Cipta Sesi' }).click();
+  await expect(host.getByText(/DASHBOARD FASILITATOR/)).toBeVisible();
   const code = (await host.locator('.room-code b').innerText()).trim();
   const a = await browser.newContext({
     viewport: { width: 390, height: 844 },
@@ -30,23 +30,23 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
   await expect(host.locator('.member-row')).toHaveCount(2);
   const projector = await host.context().newPage();
   await projector.goto(host.url().replace('/session/', '/projector/'));
-  await expect(projector.getByText('2 teachers in the room.')).toBeVisible();
-  await host.getByRole('button', { name: 'Next: Find your sticker voice' }).click();
-  await expect(alice.getByRole('heading', { name: 'Find your sticker voice.' })).toBeVisible();
-  await alice.getByRole('button', { name: 'Little pep talks' }).click();
-  await alice.getByLabel('Make it yours').fill('Keep exploring!');
-  await alice.getByRole('button', { name: 'Pop comic' }).click();
-  await expect(alice.getByLabel('Your AI image prompt')).toHaveValue(/Keep exploring!/);
-  await alice.getByRole('button', { name: 'Copy my prompt' }).click();
-  await expect(alice.getByRole('button', { name: 'Copied. Go make your WOW!' })).toBeVisible();
+  await expect(projector.getByText('2 peserta.')).toBeVisible();
+  await host.getByRole('button', { name: 'Seterusnya: Cari idea anda' }).click();
+  await expect(alice.getByRole('heading', { name: 'Cari idea anda.' })).toBeVisible();
+  await alice.getByRole('button', { name: 'Kata semangat' }).click();
+  await alice.getByLabel('Ubah kapsyen anda').fill('Keep exploring!');
+  await alice.getByRole('button', { name: 'Komik pop' }).click();
+  await expect(alice.getByLabel('Prompt gambar AI anda')).toHaveValue(/Keep exploring!/);
+  await alice.getByRole('button', { name: 'Salin Prompt Saya' }).click();
+  await expect(alice.getByRole('button', { name: 'Disalin! Jom cipta karya anda' })).toBeVisible();
   expect(await alice.evaluate(() => navigator.clipboard.readText())).toContain('Keep exploring!');
   await expect(alice.getByRole('link', { name: 'ChatGPT' })).toHaveAttribute(
     'href',
     'https://chatgpt.com',
   );
   await alice.reload();
-  await expect(alice.getByLabel('Make it yours')).toHaveValue('Keep exploring!');
-  await host.getByRole('button', { name: 'Next: Make a little magic' }).click();
+  await expect(alice.getByLabel('Ubah kapsyen anda')).toHaveValue('Keep exploring!');
+  await host.getByRole('button', { name: 'Seterusnya: Masa untuk cipta' }).click();
   const image = await sharp({
     create: { width: 400, height: 400, channels: 3, background: '#efd278' },
   })
@@ -54,16 +54,16 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
     .toBuffer();
   for (const p of [alice, bob]) {
     await p
-      .getByLabel('Finished sticker image')
+      .getByLabel('Gambar karya siap')
       .setInputFiles({ name: 'sticker.png', mimeType: 'image/png', buffer: image });
-    await p.getByRole('button', { name: 'Send to the showcase' }).click();
-    await expect(p.getByText('Sent! Your facilitator is taking a look.')).toBeVisible();
+    await p.getByRole('button', { name: 'Hantar Karya' }).click();
+    await expect(p.getByText('Berjaya dihantar! Fasilitator sedang menyemak.')).toBeVisible();
   }
   await expect(host.locator('.moderation-card')).toHaveCount(2);
   await host
     .locator('.moderation-card')
     .filter({ hasText: 'Alice' })
-    .getByRole('button', { name: 'Return' })
+    .getByRole('button', { name: 'Pulangkan' })
     .click();
   // Keep the decision in flight while the facilitator dismisses the dialog.
   let release!: () => void, arrived!: () => void;
@@ -77,60 +77,60 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
     }
     await route.continue();
   });
-  await host.getByRole('button', { name: 'Return and next' }).click();
+  await host.getByRole('button', { name: 'Pulangkan & Seterusnya' }).click();
   await hit;
-  await host.getByRole('button', { name: 'Back to review desk' }).click();
+  await host.getByRole('button', { name: 'Kembali ke Semakan' }).click();
   release();
-  await expect(alice.getByText('Let’s give it another try.')).toBeVisible();
+  await expect(alice.getByText('Karya dipulangkan. Jom cuba semula.')).toBeVisible();
   await expect(
     host
       .locator('.moderation-card')
       .filter({ hasText: 'Bob' })
-      .getByRole('button', { name: 'Approve', exact: true }),
+      .getByRole('button', { name: 'Luluskan', exact: true }),
   ).toBeEnabled();
   await expect(host.getByRole('dialog')).not.toBeVisible();
   await alice
-    .getByLabel('Finished sticker image')
+    .getByLabel('Gambar karya siap')
     .setInputFiles({ name: 'sticker.png', mimeType: 'image/png', buffer: image });
-  await alice.getByRole('button', { name: 'Replace my submission' }).click();
-  await expect(alice.getByText('Sent! Your facilitator is taking a look.')).toBeVisible();
+  await alice.getByRole('button', { name: 'Gantikan Penghantaran' }).click();
+  await expect(alice.getByText('Berjaya dihantar! Fasilitator sedang menyemak.')).toBeVisible();
   for (const name of ['Alice', 'Bob']) {
     const card = host.locator('.moderation-card').filter({ hasText: name });
-    await card.getByRole('button', { name: 'Approve', exact: true }).click();
+    await card.getByRole('button', { name: 'Luluskan', exact: true }).click();
     await expect(card).toHaveCount(0);
   }
-  await expect(alice.getByText('You’re in the showcase!')).toBeVisible();
+  await expect(alice.getByText('Karya anda ada di galeri!')).toBeVisible();
   await expect(host.locator('.gallery-card')).toHaveCount(2);
   await expect(projector.locator('.wall-image-button img').first()).toBeVisible();
-  await host.getByRole('button', { name: 'Next: Send your sticker' }).click();
-  await host.getByRole('button', { name: 'Next: The sticker showcase' }).click();
-  await host.getByRole('button', { name: 'Confirm stage change' }).click();
+  await host.getByRole('button', { name: 'Seterusnya: Hantar karya' }).click();
+  await host.getByRole('button', { name: 'Seterusnya: Galeri Karya' }).click();
+  await host.getByRole('button', { name: 'Sahkan Pertukaran' }).click();
   await expect(alice.locator('.gallery-card')).toHaveCount(2);
-  await host.getByRole('button', { name: 'Open voting', exact: true }).click();
-  await host.getByRole('button', { name: 'Confirm stage change' }).click();
+  await host.getByRole('button', { name: 'Buka Undian', exact: true }).click();
+  await host.getByRole('button', { name: 'Sahkan Pertukaran' }).click();
   await alice
     .locator('.gallery-card')
     .filter({ hasText: 'Bob' })
-    .getByRole('button', { name: 'This is my favorite' })
+    .getByRole('button', { name: 'Undi Karya Ini' })
     .click();
-  await alice.getByRole('button', { name: 'Cast my vote' }).click();
-  await expect(alice.getByText('Your vote is counted')).toBeVisible();
+  await alice.getByRole('button', { name: 'Sahkan Undian' }).click();
+  await expect(alice.getByText('Undian anda dikira')).toBeVisible();
   await expect(
     alice
       .locator('.gallery-card')
       .filter({ hasText: 'Alice' })
-      .getByRole('button', { name: 'Your creation' }),
+      .getByRole('button', { name: 'Karya anda' }),
   ).toBeDisabled();
   await bob
     .locator('.gallery-card')
     .filter({ hasText: 'Alice' })
-    .getByRole('button', { name: 'This is my favorite' })
+    .getByRole('button', { name: 'Undi Karya Ini' })
     .click();
-  await bob.getByRole('button', { name: 'Cast my vote' }).click();
-  await expect(bob.getByText('Your vote is counted')).toBeVisible();
-  await host.getByRole('button', { name: 'Close voting & reveal' }).click();
-  await host.getByRole('button', { name: 'Confirm stage change' }).click();
-  await expect(alice.getByText('Huge applause.')).toBeVisible();
+  await bob.getByRole('button', { name: 'Sahkan Undian' }).click();
+  await expect(bob.getByText('Undian anda dikira')).toBeVisible();
+  await host.getByRole('button', { name: 'Tutup Undian & Papar Keputusan' }).click();
+  await host.getByRole('button', { name: 'Sahkan Pertukaran' }).click();
+  await expect(alice.getByText('Tepukan untuk semua!', { exact: true })).toBeVisible();
   await expect(projector.locator('.winner')).toHaveCount(2);
   await expect
     .poll(() =>
@@ -140,7 +140,7 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
         .evaluate((img: HTMLImageElement) => img.naturalWidth),
     )
     .toBeGreaterThan(0);
-  await expect(alice.getByText('2 votes. 2 creative minds.')).toBeVisible();
+  await expect(alice.getByText('2 undian. 2 peserta kreatif.', { exact: false })).toBeVisible();
   await alice.screenshot({ path: 'test-results/participant-results.png', fullPage: true });
   await projector.screenshot({ path: 'test-results/projector-results.png', fullPage: true });
   // Complete the actual workshop flow with manual deletion, without a worker.
@@ -162,7 +162,7 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
   await host.getByRole('button', { name: 'Padam Semua Data Bengkel', exact: true }).click();
   await expect(host.getByRole('dialog')).toBeVisible();
   await host.getByRole('button', { name: 'Ya, padam semua data' }).click();
-  await expect(host.getByRole('heading', { name: 'Cleanup Complete' })).toBeVisible();
+  await expect(host.getByRole('heading', { name: 'Pemadaman Selesai' })).toBeVisible();
   expect((await db.doc(`sessions/${sessionId}`).get()).exists).toBe(false);
   expect(await db.doc(`sessions/${sessionId}`).listCollections()).toHaveLength(0);
   expect((await db.collection('codes').where('sessionId', '==', sessionId).get()).empty).toBe(true);
@@ -184,7 +184,7 @@ test('live workshop: join, craft, upload, moderate, vote, reveal across browsers
 test('landing fits a mobile viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Big ideas/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Wow Mean!', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
@@ -226,9 +226,9 @@ test('expired authentication can be recovered without clearing browser storage',
     } else await route.continue();
   });
   await page.goto('/facilitator');
-  await page.getByRole('button', { name: 'Enter local facilitator studio' }).click();
+  await page.getByRole('button', { name: 'Masuk Fasilitator Tempatan' }).click();
   await expect.poll(() => rejectOnce).toBe(false);
-  await expect(page.getByRole('button', { name: 'Enter local facilitator studio' })).toBeVisible();
-  await page.getByRole('button', { name: 'Enter local facilitator studio' }).click();
-  await expect(page.getByLabel('Workshop name')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Masuk Fasilitator Tempatan' })).toBeVisible();
+  await page.getByRole('button', { name: 'Masuk Fasilitator Tempatan' }).click();
+  await expect(page.getByLabel('Tajuk bengkel')).toBeVisible();
 });

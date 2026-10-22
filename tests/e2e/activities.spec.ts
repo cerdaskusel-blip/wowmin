@@ -18,7 +18,7 @@ test('facilitator saves, edits, reuses and deletes activities independently from
     } else await route.continue();
   });
   await page.goto('/facilitator');
-  await page.getByRole('button', { name: 'Enter local facilitator studio' }).click();
+  await page.getByRole('button', { name: 'Masuk Fasilitator Tempatan' }).click();
   const dashboard = page.getByRole('region', { name: 'Dashboard Aktiviti' });
   await dashboard.getByRole('button', { name: 'Cuba Muat Semula' }).click();
   await dashboard.getByRole('button', { name: 'Cipta Aktiviti' }).click();
@@ -54,16 +54,16 @@ test('facilitator saves, edits, reuses and deletes activities independently from
   await page.setViewportSize({ width: 1440, height: 1000 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await card.getByRole('button', { name: 'Mula Sesi' }).click();
-  await expect(page.getByText('FACILITATOR DASHBOARD')).toBeVisible();
+  await expect(page.getByText(/DASHBOARD FASILITATOR/)).toBeVisible();
   const firstCode = await page.locator('.room-code b').innerText();
   await expect(page.locator('.qr svg').first()).toBeVisible();
   await page.getByRole('button', { name: 'Padam Semua Data Bengkel', exact: true }).click();
   await page.getByRole('button', { name: 'Ya, padam semua data' }).click();
-  await expect(page.getByRole('heading', { name: 'Cleanup Complete' })).toBeVisible();
-  await page.getByRole('link', { name: 'Create a new workshop' }).click();
+  await expect(page.getByRole('heading', { name: 'Pemadaman Selesai' })).toBeVisible();
+  await page.getByRole('link', { name: 'Cipta Bengkel Baharu' }).click();
   await expect(card).toBeVisible(); // Session deletion preserves the template.
   await card.getByRole('button', { name: 'Mula Sesi' }).click();
-  await expect(page.getByText('FACILITATOR DASHBOARD')).toBeVisible();
+  await expect(page.getByText(/DASHBOARD FASILITATOR/)).toBeVisible();
   const liveUrl = page.url();
   expect(await page.locator('.room-code b').innerText()).not.toBe(firstCode);
   await page.goto('/facilitator');
@@ -75,8 +75,8 @@ test('facilitator saves, edits, reuses and deletes activities independently from
   await page.getByRole('button', { name: 'Ya, Padam Templat' }).click();
   await expect(card).toHaveCount(0);
   await page.goto(liveUrl);
-  await expect(page.getByText('FACILITATOR DASHBOARD')).toBeVisible();
+  await expect(page.getByText(/DASHBOARD FASILITATOR/)).toBeVisible();
   await page.getByRole('button', { name: 'Padam Semua Data Bengkel', exact: true }).click();
   await page.getByRole('button', { name: 'Ya, padam semua data' }).click();
-  await expect(page.getByRole('heading', { name: 'Cleanup Complete' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pemadaman Selesai' })).toBeVisible();
 });

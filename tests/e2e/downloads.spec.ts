@@ -98,11 +98,11 @@ async function end(request: APIRequestContext, token: string, id: string) {
 }
 async function join(page: Page, code: string, nickname: string): Promise<Person> {
   await page.goto('/?code=' + code);
-  await page.getByLabel('Your nickname').fill(nickname);
+  await page.getByLabel('Nama Paparan').fill(nickname);
   const response = page.waitForResponse(
     (r) => r.url().endsWith('/api/action') && r.request().postDataJSON()?.action === 'join',
   );
-  await page.getByRole('button', { name: 'Join the workshop' }).click();
+  await page.getByRole('button', { name: 'Masuk Bengkel' }).click();
   const result = await response;
   expect(result.ok()).toBe(true);
   const token = result.request().headers().authorization.replace('Bearer ', '');
@@ -213,10 +213,12 @@ test('60 participants: protected downloads, atomic votes, live gallery, ties and
       ),
     ).toBeVisible();
     await participant
-      .getByLabel('Finished sticker image')
+      .getByLabel('Gambar karya siap')
       .setInputFiles({ name: 'karya.png', mimeType: 'image/png', buffer: png });
-    await participant.getByRole('button', { name: 'Send to the showcase' }).click();
-    await expect(participant.getByText('Sent! Your facilitator is taking a look.')).toBeVisible();
+    await participant.getByRole('button', { name: 'Hantar Karya' }).click();
+    await expect(
+      participant.getByText('Berjaya dihantar! Fasilitator sedang menyemak.'),
+    ).toBeVisible();
     await Promise.all(crowd.slice(1).map((u) => upload(request, room.id, u, png)));
     const secondUrl = imageUrl(room.id, crowd[1].localId);
     expect((await outsiderRequest.get(secondUrl)).status()).toBe(401);
@@ -267,7 +269,7 @@ test('60 participants: protected downloads, atomic votes, live gallery, ties and
     expect((await request.get(secondUrl, { headers: headers(first.idToken) })).status()).toBe(404);
     await subRef.update({ storagePath: sub.storagePath });
     await host.goto('/facilitator');
-    await host.getByRole('button', { name: 'Enter local facilitator studio' }).click();
+    await host.getByRole('button', { name: 'Masuk Fasilitator Tempatan' }).click();
     await host.goto(`/session/${room.id}`);
     await ok(
       await action(request, facilitator.idToken, 'transition', {
@@ -276,7 +278,7 @@ test('60 participants: protected downloads, atomic votes, live gallery, ties and
       }),
     );
     await expect(participant.locator('.gallery-card')).toHaveCount(60);
-    await expect(host.getByLabel('Live workshop totals')).toContainText('60 approved');
+    await expect(host.getByLabel('Jumlah langsung bengkel')).toContainText('60 diluluskan');
     downloaded = await savedWebp(participant, 'Peserta 2');
     expect(downloaded).toEqual(original);
     await savedWebp(host, 'Cikgu Áina');
@@ -356,8 +358,8 @@ test('60 participants: protected downloads, atomic votes, live gallery, ties and
         })
       ).status(),
     ).toBe(409);
-    await expect(host.getByLabel('Live workshop totals')).toContainText('60 / 60 votes cast');
-    await expect(participant.getByText('Your vote is counted', { exact: true })).toBeVisible();
+    await expect(host.getByLabel('Jumlah langsung bengkel')).toContainText('60 / 60 undian');
+    await expect(participant.getByText('Undian anda dikira', { exact: true })).toBeVisible();
     await ok(await action(request, facilitator.idToken, 'advance', { sessionId: room.id }));
     const final = (await store.doc(`sessions/${room.id}`).get()).data()!;
     expect(final.totalVotes).toBe(60);
