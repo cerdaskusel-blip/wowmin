@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { adminAuth, store } from '../src/lib/admin';
+import { retentionMs } from '../src/lib/lifecycle';
 import { verifyDeleted } from '../src/lib/cleanup';
 if (
   process.env.FIREBASE_PROJECT_ID !== 'demo-wow' ||
@@ -8,6 +9,12 @@ if (
   !process.env.FIREBASE_AUTH_EMULATOR_HOST
 )
   throw new Error('Activity tests require local demo-wow emulators.');
+// A legacy configured retention above four hours cannot extend session access.
+const configuredRetention = process.env.WORKSHOP_RETENTION_HOURS;
+process.env.WORKSHOP_RETENTION_HOURS = '168';
+assert.equal(retentionMs(), 4 * 3600000);
+if (configuredRetention === undefined) delete process.env.WORKSHOP_RETENTION_HOURS;
+else process.env.WORKSHOP_RETENTION_HOURS = configuredRetention;
 const origin = 'http://127.0.0.1:3000';
 async function auth(endpoint: string, data: object) {
   const response = await fetch(
@@ -137,6 +144,38 @@ try {
   sessions.push(first);
   const firstData = (await store.doc(`sessions/${first}`).get()).data()!;
   assert.equal(firstData.title, fields.title);
+  assert.equal(firstData.stage, 'generate');
+  assert.equal(firstData.stageEndsAt - firstData.createdAt, fields.durationMinutes * 60000);
+  await ok(await request('/api/action', host.idToken, { action: 'advance', sessionId: first }));
+  assert.equal(
+    (await store.doc(`sessions/${first}`).get()).data()!.stageEndsAt,
+    firstData.stageEndsAt,
+  );
+  await ok(await request('/api/action', host.idToken, { action: 'pause', sessionId: first }));
+  const paused = (await store.doc(`sessions/${first}`).get()).data()!;
+  assert.ok(paused.pausedRemainingMs > 0);
+  await ok(await request('/api/action', host.idToken, { action: 'resume', sessionId: first }));
+  const resumed = (await store.doc(`sessions/${first}`).get()).data()!;
+  assert.equal(resumed.pausedRemainingMs, null);
+  assert.ok(resumed.stageEndsAt >= firstData.stageEndsAt);
+  // Trusted fixture probes the hard access cap without waiting four hours.
+  await store.doc(`sessions/${first}`).update({ stageEndsAt: firstData.expiresAt - 1000 });
+  await ok(await request('/api/action', host.idToken, { action: 'extend', sessionId: first }));
+  assert.equal(
+    (await store.doc(`sessions/${first}`).get()).data()!.stageEndsAt,
+    firstData.expiresAt,
+  );
+  await ok(await request('/api/action', host.idToken, { action: 'pause', sessionId: first }));
+  const beforeExtension = Date.now();
+  await ok(await request('/api/action', host.idToken, { action: 'extend', sessionId: first }));
+  assert.ok(
+    (await store.doc(`sessions/${first}`).get()).data()!.pausedRemainingMs <=
+      firstData.expiresAt - beforeExtension,
+  );
+  await ok(await request('/api/action', host.idToken, { action: 'resume', sessionId: first }));
+  assert.ok(
+    (await store.doc(`sessions/${first}`).get()).data()!.stageEndsAt <= firstData.expiresAt,
+  );
   assert.deepEqual(firstData.activity, saved);
   assert.equal(firstData.hostId, host.localId);
   assert.equal(firstData.expiresAt - firstData.createdAt, 4 * 3600000);
@@ -159,6 +198,7 @@ try {
   sessions.push(second);
   const secondData = (await store.doc(`sessions/${second}`).get()).data()!;
   assert.deepEqual(secondData.activity, updated);
+  assert.equal(secondData.stageEndsAt - secondData.createdAt, revised.durationMinutes * 60000);
   assert.notEqual(secondData.code, firstData.code);
   const ended = await ok(
     await request('/api/cleanup', host.idToken, {
@@ -198,7 +238,7 @@ try {
   sessions.push(legacy.sessionId);
   assert.equal((await store.doc(`sessions/${legacy.sessionId}`).get()).data()!.activity, undefined);
   console.log(
-    'PASS template validation, server-owned metadata, CRUD, ownership/origin enforcement, immutable session snapshots, independent deletion and legacy session creation.',
+    'PASS template validation, server-owned metadata, CRUD, ownership/origin enforcement, immutable session snapshots, independent deletion, activity timers/pausing/access caps and legacy session creation.',
   );
 } finally {
   for (const id of sessions) {
