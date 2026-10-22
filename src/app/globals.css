@@ -2942,6 +2942,7 @@ summary {
   gap: 8px;
 }
 .projector-wall .gallery-card {
+  position: relative;
   padding: 6px;
   display: flex;
   flex-direction: column;
@@ -3369,4 +3370,10 @@ summary {
 }
 .upload-error:empty {
   display: none;
+}
+
+.projector-wall .compact-download {
+  position: absolute;
+  top: 6px;
+  right: 6px;
 }

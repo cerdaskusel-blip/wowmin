@@ -140,6 +140,10 @@ export function UploadPanel({ session, own }: { session: Workshop; own: Submissi
             Only upload your finished sticker. Never upload an original selfie or a student photo.
             Selected files stay in this tab until sent; after a refresh, choose the file again.
           </p>
+          <p className="notice">
+            Karya yang dihantar akan dipaparkan dalam galeri dan boleh dimuat turun oleh peserta
+            bengkel.
+          </p>
           <button className="button dark full" disabled={!file || busy || !open}>
             {busy
               ? 'Sending your sticker…'

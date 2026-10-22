@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Submission, Workshop, acceptingVotes, wallOrder } from '@/lib/workshop';
 import { StickerImage, useNow } from './ui';
 import { useIdentity } from './provider';
+import { DownloadArtwork } from './download-artwork';
 import { Modal } from './modal';
 export function Gallery({
   submissions,
@@ -89,6 +90,7 @@ export function Gallery({
                 {s.id === user?.uid ? ' (you)' : ''}
               </h3>
               {!projector && <p className="wall-caption">{s.caption}</p>}
+              <DownloadArtwork sessionId={session.id} submission={s} compact={projector} />
               {session.stage === 'vote' && !host && !projector && (
                 <button
                   className={`button ${vote === s.id ? 'approve' : 'secondary'} full`}
@@ -117,6 +119,7 @@ export function Gallery({
         <Modal title={`A closer look · ${preview.nickname}`} onClose={() => setPreview(null)}>
           <StickerImage sessionId={session.id} sub={preview} />
           <p>{preview.caption}</p>
+          <DownloadArtwork sessionId={session.id} submission={preview} />
           <div className="two-buttons">
             <button autoFocus className="button secondary" onClick={() => setPreview(null)}>
               Back to wall
