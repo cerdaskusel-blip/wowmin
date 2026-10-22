@@ -5,6 +5,7 @@ import { signInAnonymously, signOut } from 'firebase/auth';
 import { ArrowRight, LogIn, Presentation, Check } from 'lucide-react';
 import { ErrorMessage, Tagline } from '@/components/ui';
 import Link from 'next/link';
+import Image from 'next/image';
 import { doc, getDoc } from 'firebase/firestore';
 import { useIdentity } from '@/components/provider';
 import { api, auth, db } from '@/lib/firebase';
@@ -132,11 +133,21 @@ export default function Home() {
       <section className="landing-hero" aria-labelledby="landing-title">
         <div className="landing-corners" aria-hidden="true" />
         <div className="landing-content">
-          <h1 id="landing-title" className="landing-name">
-            Wow Mean!
-          </h1>
-          <div className="landing-tagline">
-            <Tagline />
+          <div className="landing-artwork">
+            <h1 id="landing-title" className="landing-name">
+              <Image
+                src="/brand/wow-mean-hero.png"
+                alt="Wow Mean!"
+                width={1536}
+                height={660}
+                preload
+                unoptimized
+                className="landing-official-art"
+              />
+            </h1>
+            <div className="landing-tagline">
+              <Tagline />
+            </div>
           </div>
           <nav className="landing-actions" aria-label="Pilih ruang bengkel">
             <a href="#masuk-sesi" className="landing-action join-action">

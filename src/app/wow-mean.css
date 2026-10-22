@@ -465,9 +465,8 @@ textarea::placeholder {
   isolation: isolate;
   overflow: hidden;
   min-height: min(100svh, 1000px);
-  display: grid;
-  place-items: center;
-  padding: 72px 7vw;
+  display: block;
+  padding: 0 0 70px;
 }
 .landing-corners {
   position: absolute;
@@ -475,51 +474,45 @@ textarea::placeholder {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 43% 38% at -5% -7%, #f660a0 98%, transparent),
-    radial-gradient(ellipse 37% 34% at 108% -2%, #b0cf83 98%, transparent),
     radial-gradient(ellipse 38% 34% at -7% 113%, #fa71a4 98%, transparent),
     radial-gradient(ellipse 38% 35% at 107% 112%, #a4c777 98%, transparent),
     radial-gradient(ellipse 45% 15% at 18% 104%, #ffe08b 98%, transparent);
 }
-.landing-corners::before,
-.landing-corners::after {
-  content: '';
-  position: absolute;
-  width: 135px;
-  height: 110px;
-  background: radial-gradient(circle, #6b9c3c66 4px, transparent 5px) 0 0 / 25px 25px;
-}
-.landing-corners::before {
-  right: 2%;
-  top: 2%;
-}
-.landing-corners::after {
-  left: 1%;
-  top: 27%;
-}
 .landing-content {
-  width: min(1280px, 100%);
+  width: min(1536px, 100%);
+  margin: 0 auto;
   text-align: center;
 }
+.landing-artwork {
+  position: relative;
+}
 .landing-name {
-  font-size: clamp(56px, 10vw, 154px);
-  margin: 50px 0 28px;
-  line-height: 1.05;
+  margin: 0;
+  line-height: 0;
+}
+.landing-official-art {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 .landing-tagline {
-  width: fit-content;
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 12px 48px;
+  position: absolute;
+  left: 24.4%;
+  top: 81.8%;
+  width: 53.5%;
+  height: 17.4%;
+  display: grid;
+  place-items: center;
   border-radius: 80px;
-  background: #fff0b2;
+  background: #fff6bf;
 }
 .landing-tagline .brand-tagline {
-  font-size: clamp(23px, 4.5vw, 56px);
+  font-size: clamp(13px, 3.7vw, 56px);
   gap: 0.5em;
 }
 .landing-actions {
-  margin-top: 58px;
+  width: 84%;
+  margin: 30px auto 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 44px;
@@ -642,18 +635,11 @@ textarea::placeholder {
     border-radius: 16px;
   }
   .landing-hero {
-    min-height: 680px;
-    padding: 76px 22px;
-  }
-  .landing-name {
-    font-size: clamp(50px, 12vw, 78px);
-    margin: 30px 0;
-  }
-  .landing-tagline {
-    padding: 12px 24px;
+    min-height: 600px;
+    padding: 0 0 64px;
   }
   .landing-tagline .brand-tagline {
-    font-size: clamp(22px, 6vw, 34px);
+    font-size: clamp(13px, 3.7vw, 26px);
   }
   .landing-actions {
     grid-template-columns: 1fr;
